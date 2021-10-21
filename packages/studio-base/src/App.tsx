@@ -6,7 +6,7 @@ import { Suspense, useState } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
-import Workspace from "@foxglove/studio-base/Workspace";
+import Workspace, { WorkspaceProps } from "@foxglove/studio-base/Workspace";
 import DocumentTitleAdapter from "@foxglove/studio-base/components/DocumentTitleAdapter";
 import MultiProvider from "@foxglove/studio-base/components/MultiProvider";
 import { NativeFileMenuPlayerSelection } from "@foxglove/studio-base/components/NativeFileMenuPlayerSelection";
@@ -33,7 +33,7 @@ type AppProps = {
   loadWelcomeLayout?: boolean;
   availableSources: PlayerSourceDefinition[];
   demoBagUrl?: string;
-  deepLinks?: string[];
+  deepLinks?: WorkspaceProps["deepLinks"];
 };
 
 export default function App(props: AppProps): JSX.Element {

@@ -85,7 +85,27 @@ export default function Root(): ReactElement {
     /* eslint-enable react/jsx-key */
   ];
 
-  const deepLinks = useMemo(() => desktopBridge.getDeepLinks(), []);
+  const deepLinks = useMemo(() => {
+    const links = desktopBridge.getDeepLinks();
+    const firstLink = links[0];
+    if (!firstLink) {
+      return;
+    }
+
+    const url = new URL(firstLink);
+    // only support the open command
+    // Test if the pathname matches //open or //open/
+    if (!/\/\/open\/?/.test(url.pathname)) {
+      return;
+    }
+
+    return [
+      {
+        action: "open",
+        args: Object.fromEntries(url.searchParams.entries()),
+      },
+    ];
+  }, []);
 
   return (
     <ThemeProvider>

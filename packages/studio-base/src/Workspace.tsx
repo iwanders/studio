@@ -125,10 +125,15 @@ function Variables() {
 // file types we support for drag/drop
 const allowedDropExtensions = [".bag", ".foxe", ".urdf", ".xacro"];
 
-type WorkspaceProps = {
+type DeepLink = {
+  action: "open";
+  args: Record<string, string | undefined>;
+};
+
+export type WorkspaceProps = {
   loadWelcomeLayout?: boolean;
   demoBagUrl?: string;
-  deepLinks?: string[];
+  deepLinks?: DeepLink[];
 };
 
 const selectPlayerPresence = ({ playerState }: MessagePipelineContext) => playerState.presence;
@@ -323,19 +328,15 @@ export default function Workspace(props: WorkspaceProps): JSX.Element {
     }
 
     try {
-      const url = new URL(firstLink);
-      // only support the open command
-
-      // Test if the pathname matches //open or //open/
-      if (!/\/\/open\/?/.test(url.pathname)) {
+      if (firstLink.action !== "open") {
         return;
       }
 
-      const type = url.searchParams.get("type");
+      const type = firstLink.args.type;
       if (type === "rosbag") {
-        const bagUrl = url.searchParams.get("url");
+        const bagUrl = firstLink.args.url;
         if (!bagUrl) {
-          log.warn(`Missing rosbag url param in ${url}`);
+          log.warn(`Missing rosbag url param`);
           return;
         }
         selectSource(
@@ -346,12 +347,12 @@ export default function Workspace(props: WorkspaceProps): JSX.Element {
           { url: bagUrl },
         );
       } else if (type === "foxglove-data-platform") {
-        const start = url.searchParams.get("start") ?? "";
-        const end = url.searchParams.get("end") ?? "";
-        const seekTo = url.searchParams.get("seekTo") ?? undefined;
-        const deviceId = url.searchParams.get("deviceId");
+        const start = firstLink.args.start ?? "";
+        const end = firstLink.args.end ?? "";
+        const seekTo = firstLink.args.seekTo ?? undefined;
+        const deviceId = firstLink.args.deviceId;
         if (!deviceId) {
-          log.warn(`Missing deviceId param in ${url}`);
+          log.warn(`Missing deviceId param`);
           return;
         }
         if (
@@ -359,7 +360,7 @@ export default function Workspace(props: WorkspaceProps): JSX.Element {
           !fromRFC3339String(end) ||
           (seekTo && !fromRFC3339String(seekTo))
         ) {
-          log.warn(`Missing or invalid timestamp(s) in ${url}`);
+          log.warn(`Missing or invalid timestamp(s)`);
           return;
         }
         selectSource(
@@ -370,7 +371,7 @@ export default function Workspace(props: WorkspaceProps): JSX.Element {
           { start, end, seekTo, deviceId },
         );
       } else if (type === "rosbridge") {
-        const rosbridgeHostUrl = url.searchParams.get("url") ?? "";
+        const rosbridgeHostUrl = firstLink.args.url ?? "";
         selectSource(
           {
             name: "ROS 1 Rosbridge",
@@ -379,7 +380,7 @@ export default function Workspace(props: WorkspaceProps): JSX.Element {
           { url: rosbridgeHostUrl },
         );
       } else {
-        log.warn(`Unknown deep link type ${url}`);
+        log.warn(`Unknown deep link type ${type}`);
       }
     } catch (err) {
       log.error(err);

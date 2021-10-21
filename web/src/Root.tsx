@@ -3,7 +3,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import { Link } from "@fluentui/react";
-import { useMemo } from "react";
+import { useMemo, ComponentProps } from "react";
 
 import {
   App,
@@ -90,12 +90,17 @@ export function Root({ loadWelcomeLayout }: { loadWelcomeLayout: boolean }): JSX
 
   const api = useMemo(() => new ConsoleApi(process.env.FOXGLOVE_API_URL!), []);
 
-  const deepLinks = useMemo(() => {
+  type DeepLinkProp = ComponentProps<typeof App>["deepLinks"];
+  const deepLinks = useMemo<DeepLinkProp>(() => {
     const url = new URL(window.location.href);
-
     if (url.searchParams.get("action") === "open") {
       url.searchParams.delete("action");
-      return [`foxglove://open?${url.searchParams.toString()}`];
+      return [
+        {
+          action: "open",
+          args: Object.fromEntries(url.searchParams.entries()),
+        },
+      ];
     }
 
     return undefined;
