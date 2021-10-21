@@ -90,6 +90,17 @@ export function Root({ loadWelcomeLayout }: { loadWelcomeLayout: boolean }): JSX
 
   const api = useMemo(() => new ConsoleApi(process.env.FOXGLOVE_API_URL!), []);
 
+  const deepLinks = useMemo(() => {
+    const url = new URL(window.location.href);
+
+    if (url.searchParams.get("action") === "open") {
+      url.searchParams.delete("action");
+      return [`foxglove://open?${url.searchParams.toString()}`];
+    }
+
+    return undefined;
+  }, []);
+
   const providers = [
     /* eslint-disable react/jsx-key */
     <LocalStorageAppConfigurationProvider />,
@@ -113,6 +124,7 @@ export function Root({ loadWelcomeLayout }: { loadWelcomeLayout: boolean }): JSX
               loadWelcomeLayout={loadWelcomeLayout}
               demoBagUrl={DEMO_BAG_URL}
               availableSources={playerSources}
+              deepLinks={deepLinks}
             />
           </MultiProvider>
         </ErrorBoundary>

@@ -369,6 +369,15 @@ export default function Workspace(props: WorkspaceProps): JSX.Element {
           },
           { start, end, seekTo, deviceId },
         );
+      } else if (type === "rosbridge") {
+        const rosbridgeHostUrl = url.searchParams.get("url") ?? "";
+        selectSource(
+          {
+            name: "ROS 1 Rosbridge",
+            type: "rosbridge-websocket",
+          },
+          { url: rosbridgeHostUrl },
+        );
       } else {
         log.warn(`Unknown deep link type ${url}`);
       }

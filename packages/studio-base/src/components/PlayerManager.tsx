@@ -227,9 +227,12 @@ async function rosbridgeSource(options: FactoryOptions): Promise<Player | undefi
   // undefined url indicates the user canceled the prompt
   let maybeUrl;
   const restore = Boolean(options.sourceOptions.restore);
+  const urlOption = options.sourceOptions.url;
 
   if (restore) {
     maybeUrl = options.storage.getItem<string>(storageCacheKey);
+  } else if (typeof urlOption === "string") {
+    maybeUrl = urlOption;
   } else {
     const value = options.storage.getItem<string>(storageCacheKey) ?? "ws://localhost:9090";
     maybeUrl = await options.prompt({

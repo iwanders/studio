@@ -33,6 +33,10 @@ type HttpSourceParams = {
   url?: string;
 };
 
+type RosbridgeSourceParams = {
+  url?: string;
+};
+
 type FoxgloveDataPlatformSourceParams = {
   start?: string;
   end?: string;
@@ -48,6 +52,10 @@ interface SelectSourceFunction {
   (definition: SpecializedPlayerSource<"ros1-local-bagfile">, params?: FileSourceParams): void;
   (definition: SpecializedPlayerSource<"ros2-local-bagfile">, params?: FolderSourceParams): void;
   (definition: SpecializedPlayerSource<"ros1-remote-bagfile">, params?: HttpSourceParams): void;
+  (
+    definition: SpecializedPlayerSource<"rosbridge-websocket">,
+    params?: RosbridgeSourceParams,
+  ): void;
   (
     definition: SpecializedPlayerSource<"foxglove-data-platform">,
     params?: FoxgloveDataPlatformSourceParams,
