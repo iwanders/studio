@@ -4,15 +4,7 @@
 
 import { ActionButton, makeStyles, Stack, Text, useTheme } from "@fluentui/react";
 import { captureException } from "@sentry/core";
-import {
-  Component,
-  createContext,
-  ErrorInfo,
-  PropsWithChildren,
-  ReactNode,
-  useMemo,
-  useState,
-} from "react";
+import { Component, ErrorInfo, PropsWithChildren, ReactNode, useMemo, useState } from "react";
 
 import { AppError } from "@foxglove/studio-base/util/errors";
 
@@ -71,19 +63,20 @@ function ErrorStack({ stack }: { stack: string }) {
   );
 }
 
-type ErrorDisplayProps = {
+type PanelErrorDisplayProps = {
   error?: Error;
   errorInfo?: ErrorInfo;
   onDismiss?: () => void;
+  onRemovePanel?: () => void;
 };
 
-function ErrorDisplay(props: ErrorDisplayProps) {
+function PanelErrorDisplay(props: PanelErrorDisplayProps) {
+  const styles = useStyles();
+  const theme = useTheme();
+
   const { error, errorInfo } = props;
 
   const [showErrorDetails, setShowErrorDetails] = useState(false);
-
-  const styles = useStyles();
-  const theme = useTheme();
 
   const errorDetails = useMemo(() => {
     if (!showErrorDetails) {
@@ -120,9 +113,10 @@ function ErrorDisplay(props: ErrorDisplayProps) {
     <Stack className={styles.content} tokens={{ childrenGap: theme.spacing.m }}>
       <Stack.Item>
         <Text block className={styles.header} variant="large" as="h2">
-          The app encountered an error.
+          The panel encountered an unexpected error.
         </Text>
         <ActionButton onClick={props.onDismiss}>Dismiss</ActionButton>
+        <ActionButton onClick={props.onRemovePanel}>Remove Panel</ActionButton>
       </Stack.Item>
       <Stack.Item>
         <ActionButton onClick={() => setShowErrorDetails(!showErrorDetails)}>
@@ -134,13 +128,15 @@ function ErrorDisplay(props: ErrorDisplayProps) {
   );
 }
 
+type Props = {
+  onRemovePanel: () => void;
+};
+
 type State = {
   currentError: { error: Error; errorInfo: ErrorInfo } | undefined;
 };
 
-export const HideErrorSourceLocations = createContext(false);
-
-export default class ErrorBoundary extends Component<PropsWithChildren<unknown>, State> {
+export default class PanelErrorBoundary extends Component<PropsWithChildren<Props>, State> {
   override state: State = {
     currentError: undefined,
   };
@@ -153,10 +149,11 @@ export default class ErrorBoundary extends Component<PropsWithChildren<unknown>,
   override render(): ReactNode {
     if (this.state.currentError) {
       return (
-        <ErrorDisplay
+        <PanelErrorDisplay
           error={this.state.currentError?.error}
           errorInfo={this.state.currentError?.errorInfo}
           onDismiss={() => this.setState({ currentError: undefined })}
+          onRemovePanel={this.props.onRemovePanel}
         />
       );
     }
