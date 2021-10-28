@@ -73,7 +73,7 @@ export function bagConnectionsToTopics(
       name: connection.topic,
       datatype: connection.type,
       numMessages: numMessagesByConnectionIndex[index],
-      studioDatatype,
+      wellKnownDatatype: studioDatatype,
     };
   });
   return Object.values(topics);

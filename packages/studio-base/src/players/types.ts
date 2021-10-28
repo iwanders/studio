@@ -214,9 +214,7 @@ export type PlayerStateActiveData = {
 
 // Represents a ROS topic, though the actual data does not need to come from a ROS system.
 export type Topic = {
-  // Of ROS topic format, i.e. "/some/topic". We currently depend on this slashes format a bit in
-  // `<MessageHistroy>`, though we could relax this and support arbitrary strings. It's nice to have
-  // a consistent representation for topics that people recognize though.
+  // Of ROS topic format, i.e. "/some/topic".
   name: string;
   // Name of the datatype (see `type PlayerStateActiveData` for details).
   datatype: string;
@@ -226,8 +224,8 @@ export type Topic = {
   // The number of messages present on the topic. Valid only for sources with a fixed number of
   // messages, such as bags.
   numMessages?: number;
-
-  studioDatatype?: string;
+  // Name of the well known studio datatype for messages on this topic
+  wellKnownDatatype?: string;
 };
 
 type RosSingularField = number | string | boolean | RosObject; // No time -- consider it a message.

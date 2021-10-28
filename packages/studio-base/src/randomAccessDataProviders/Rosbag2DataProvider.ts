@@ -85,7 +85,7 @@ export default class Rosbag2DataProvider implements RandomAccessDataProvider {
         name: topicDef.name,
         datatype: topicDef.type,
         numMessages: messageCounts.get(topicDef.name),
-        studioDatatype,
+        wellKnownDatatype: studioDatatype,
       });
       connections.push({
         messageDefinition,

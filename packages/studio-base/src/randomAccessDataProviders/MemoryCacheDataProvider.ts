@@ -671,6 +671,10 @@ export default class MemoryCacheDataProvider implements RandomAccessDataProvider
         }
 
         const lazyMsg = lazyReader.readMessage(bytes);
+
+        // fixme - if we have a topic with a well known datatype, we need to add the
+        // wellKnownMessage field and wrap the lazyMsg
+
         messagesByTopic[rosBinaryMessage.topic]?.push({
           topic: rosBinaryMessage.topic,
           receiveTime: rosBinaryMessage.receiveTime,

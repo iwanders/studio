@@ -14,8 +14,9 @@ declare module "@foxglove/studio" {
     name: string;
     // topic datatype
     datatype: string;
-    // If the topic data conforms to a specific studio datatype, that datatype will be set in this field.
-    studioDatatype?: string;
+    // If the topic data conforms to a specific well knwon studio datatype, that datatype will be
+    // set in this field.
+    wellKnownDatatype?: string;
   };
 
   /**
@@ -25,6 +26,7 @@ declare module "@foxglove/studio" {
     topic: string;
     receiveTime: Time;
     message: T;
+    wellKnownMessage?: unknown;
   }>;
 
   export interface LayoutActions {
