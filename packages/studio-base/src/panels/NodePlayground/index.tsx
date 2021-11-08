@@ -11,7 +11,7 @@
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
 
-import { Link, Stack } from "@fluentui/react";
+import { Link, Spinner, SpinnerSize, Stack } from "@fluentui/react";
 import ArrowLeftIcon from "@mdi/svg/svg/arrow-left.svg";
 import PlusIcon from "@mdi/svg/svg/plus.svg";
 import { Suspense } from "react";
@@ -24,7 +24,6 @@ import Icon from "@foxglove/studio-base/components/Icon";
 import { LegacyInput } from "@foxglove/studio-base/components/LegacyStyledComponents";
 import Panel from "@foxglove/studio-base/components/Panel";
 import PanelToolbar from "@foxglove/studio-base/components/PanelToolbar";
-import SpinningLoadingIcon from "@foxglove/studio-base/components/SpinningLoadingIcon";
 import TextContent from "@foxglove/studio-base/components/TextContent";
 import {
   useCurrentLayoutActions,
@@ -116,7 +115,7 @@ const WelcomeScreen = ({
         , or just create a new node.
       </TextContent>
       <Button style={{ marginTop: "8px" }} onClick={() => addNewNode()}>
-        <Icon medium>
+        <Icon size="medium">
           <PlusIcon />
         </Icon>{" "}
         New node
@@ -134,7 +133,7 @@ function NodePlayground(props: Props) {
   const [explorer, updateExplorer] = React.useState<Explorer>(undefined);
 
   const userNodes = useCurrentLayoutSelector(
-    (state) => state.selectedLayout?.data.userNodes ?? EMPTY_USER_NODES,
+    (state) => state.selectedLayout?.data?.userNodes ?? EMPTY_USER_NODES,
   );
   const {
     state: { nodeStates: userNodeDiagnostics, rosLib },
@@ -166,6 +165,7 @@ function NodePlayground(props: Props) {
     borderRadius: 0,
     margin: 0,
     backgroundColor: colors.DARK2,
+    color: colors.LIGHT2,
     padding: "4px 20px",
     width: `${inputTitle.length + 4}ch`, // Width based on character count of title + padding
   };
@@ -277,7 +277,7 @@ function NodePlayground(props: Props) {
           >
             {scriptBackStack.length > 1 && (
               <Icon
-                large
+                size="large"
                 tooltip="Go back"
                 dataTest="go-back"
                 style={{ color: colors.DARK9 }}
@@ -307,7 +307,7 @@ function NodePlayground(props: Props) {
               </div>
             )}
             <Icon
-              large
+              size="large"
               tooltip="new node"
               dataTest="new-node"
               style={{ color: colors.DARK9, padding: "0 5px" }}
@@ -333,9 +333,7 @@ function NodePlayground(props: Props) {
               <Suspense
                 fallback={
                   <Flex center style={{ width: "100%", height: "100%" }}>
-                    <Icon large>
-                      <SpinningLoadingIcon />
-                    </Icon>
+                    <Spinner size={SpinnerSize.large} />
                   </Flex>
                 }
               >

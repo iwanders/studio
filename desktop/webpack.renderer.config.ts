@@ -86,7 +86,9 @@ export default (env: unknown, argv: WebpackArgv): Configuration => {
         SIGNUP_API_URL: "https://foxglove.dev/api/signup",
         SLACK_INVITE_URL: "https://foxglove.dev/join-slack",
         OAUTH_CLIENT_ID: process.env.OAUTH_CLIENT_ID ?? "oSJGEAQm16LNF09FSVTMYJO5aArQzq8o",
-        FOXGLOVE_API_URL: process.env.FOXGLOVE_API_URL ?? "http://api.foxglove.dev",
+        FOXGLOVE_API_URL: process.env.FOXGLOVE_API_URL ?? "https://api.foxglove.dev",
+        FOXGLOVE_ACCOUNT_DASHBOARD_URL:
+          process.env.FOXGLOVE_ACCOUNT_DASHBOARD_URL ?? "https://console.foxglove.dev/dashboard",
       }),
       new HtmlWebpackPlugin({
         templateContent: `
@@ -95,12 +97,17 @@ export default (env: unknown, argv: WebpackArgv): Configuration => {
     <head><meta charset="utf-8"></head>
     <script>
       global = globalThis;
-      window.FabricConfig = ${
-        // don't load @fabricui fonts from Microsoft servers
-        // https://github.com/microsoft/fluentui/issues/10363
-        JSON.stringify({ fontBaseUrl: "" })
-      };
     </script>
+    <style>
+      html, body {
+        background-color: #fdfdfd;
+      }
+      @media (prefers-color-scheme: dark) {
+        html, body {
+          background-color: #121217;
+        }
+      }
+    </style>
     <body>
       <div id="root"></div>
     </body>

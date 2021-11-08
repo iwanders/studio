@@ -11,17 +11,10 @@
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
 
-import styled from "styled-components";
-
 import HelpModal from "@foxglove/studio-base/components/HelpModal";
 import KeyboardShortcut from "@foxglove/studio-base/components/KeyboardShortcut";
 
-const STitle = styled.h3`
-  margin: 16px 0 8px 0;
-`;
-
 const COMMAND = "⌘";
-const SHIFT = "⇧";
 
 type Props = {
   onRequestClose: () => void;
@@ -30,21 +23,21 @@ export default function ShortcutsModal({ onRequestClose }: Props): React.ReactEl
   return (
     <HelpModal onRequestClose={onRequestClose}>
       <h2>Keyboard shortcuts</h2>
-      <STitle>Global</STitle>
-      <KeyboardShortcut description="Save layouts" keys={[COMMAND, "s"]} />
-      <KeyboardShortcut description="Import/export layouts" keys={[COMMAND, "e"]} />
-      <KeyboardShortcut description="Open a file" keys={[COMMAND, "o"]} />
-      <KeyboardShortcut description="Add a second bag" keys={[COMMAND, SHIFT, "o"]} />
-      <KeyboardShortcut description="Select all panels" keys={[COMMAND, "a"]} />
-      <KeyboardShortcut description="Show help and resources" keys={[SHIFT, "/"]} />
+      <h4>Global</h4>
       <KeyboardShortcut description="Show shortcuts" keys={[COMMAND, "/"]} />
+
+      <h4>Panels</h4>
+      <KeyboardShortcut
+        description="Select panel to group into a Tab panel"
+        keys={[COMMAND, "click"]}
+      />
+      <KeyboardShortcut description="Select all panels" keys={[COMMAND, "a"]} />
+      <KeyboardShortcut description="View panel shortcuts" keys={["hover", "~"]} />
+
+      <h4>Playback bar</h4>
       <KeyboardShortcut description="Pause or play" keys={["Space"]} />
       <KeyboardShortcut description="Seek forward 100ms" keys={["⇢"]} />
       <KeyboardShortcut description="Seek backward 100ms" keys={["⇠"]} />
-
-      <STitle>Panel</STitle>
-      <KeyboardShortcut description="Hovering over a panel to view panel shortcut" keys={["~"]} />
-      <KeyboardShortcut description="Hold to lock panel in full screen" keys={["~", SHIFT]} />
     </HelpModal>
   );
 }

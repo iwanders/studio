@@ -2,7 +2,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import { DefaultButton, Stack, Text, useTheme } from "@fluentui/react";
+import { DefaultButton, Link, Stack, Text, useTheme } from "@fluentui/react";
 import { StrictMode, useMemo, useState } from "react";
 import { useAsync, useUnmount } from "react-use";
 
@@ -11,9 +11,11 @@ import ShareJsonModal from "@foxglove/studio-base/components/ShareJsonModal";
 import { SidebarContent } from "@foxglove/studio-base/components/SidebarContent";
 import {
   useCurrentLayoutActions,
+  useCurrentLayoutSelector,
   useSelectedPanels,
 } from "@foxglove/studio-base/context/CurrentLayoutContext";
 import { usePanelCatalog } from "@foxglove/studio-base/context/PanelCatalogContext";
+import { useWorkspace } from "@foxglove/studio-base/context/WorkspaceContext";
 import { PanelConfig } from "@foxglove/studio-base/types/panels";
 import { TAB_PANEL_TYPE } from "@foxglove/studio-base/util/globalConstants";
 import { getPanelTypeFromId } from "@foxglove/studio-base/util/layout";
@@ -21,7 +23,9 @@ import { getPanelTypeFromId } from "@foxglove/studio-base/util/layout";
 import SchemaEditor from "./SchemaEditor";
 
 export default function PanelSettings(): JSX.Element {
+  const selectedLayoutId = useCurrentLayoutSelector((state) => state.selectedLayout?.id);
   const { selectedPanelIds, setSelectedPanelIds } = useSelectedPanels();
+  const { openLayoutBrowser } = useWorkspace();
   const selectedPanelId = useMemo(
     () => (selectedPanelIds.length === 1 ? selectedPanelIds[0] : undefined),
     [selectedPanelIds],
@@ -47,7 +51,7 @@ export default function PanelSettings(): JSX.Element {
 
   const [showShareModal, setShowShareModal] = useState(false);
   const shareModal = useMemo(() => {
-    const panelConfigById = getCurrentLayout().selectedLayout?.data.configById;
+    const panelConfigById = getCurrentLayout().selectedLayout?.data?.configById;
     if (selectedPanelId == undefined || !showShareModal || !panelConfigById) {
       return ReactNull;
     }
@@ -78,15 +82,24 @@ export default function PanelSettings(): JSX.Element {
 
   if (error) {
     return (
-      <SidebarContent title={`Panel Settings`}>
+      <SidebarContent title="Panel settings">
         <Text styles={{ root: { color: theme.semanticColors.errorText } }}>{error.message}</Text>
       </SidebarContent>
     );
   }
 
+  if (selectedLayoutId == undefined) {
+    return (
+      <SidebarContent title="Panel settings">
+        <Text styles={{ root: { color: theme.palette.neutralTertiary } }}>
+          <Link onClick={openLayoutBrowser}>Select a layout</Link> to get started!
+        </Text>
+      </SidebarContent>
+    );
+  }
   if (selectedPanelId == undefined) {
     return (
-      <SidebarContent title={`Panel Settings`}>
+      <SidebarContent title="Panel settings">
         <Text styles={{ root: { color: theme.palette.neutralTertiary } }}>
           Select a panel to edit its settings.
         </Text>
@@ -101,7 +114,7 @@ export default function PanelSettings(): JSX.Element {
 
   if (!config) {
     return (
-      <SidebarContent title={`Panel Settings`}>
+      <SidebarContent title="Panel settings">
         <Text styles={{ root: { color: theme.palette.neutralTertiary } }}>
           loading panel settings...
         </Text>
@@ -110,7 +123,7 @@ export default function PanelSettings(): JSX.Element {
   }
 
   return (
-    <SidebarContent title={`${panelInfo.title} Panel Settings`}>
+    <SidebarContent title={`${panelInfo.title} panel settings`}>
       {shareModal}
       <Stack tokens={{ childrenGap: theme.spacing.m }}>
         <Stack.Item>

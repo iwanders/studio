@@ -15,7 +15,6 @@ import {
 import path from "path";
 
 import Logger from "@foxglove/log";
-import colors from "@foxglove/studio-base/src/styles/colors.module.scss";
 
 import pkgInfo from "../../package.json";
 import getDevModeIcon from "./getDevModeIcon";
@@ -35,7 +34,7 @@ const log = Logger.getLogger(__filename);
 type ClearableMenu = Menu & { clear: () => void };
 
 function newStudioWindow(deepLinks: string[] = []): BrowserWindow {
-  const [allowCrashReporting, allowTelemetry] = getTelemetrySettings();
+  const { crashReportingEnabled, telemetryEnabled } = getTelemetrySettings();
 
   const preloadPath = path.join(app.getAppPath(), "main", "preload.js");
 
@@ -51,8 +50,8 @@ function newStudioWindow(deepLinks: string[] = []): BrowserWindow {
       preload: preloadPath,
       nodeIntegration: false,
       additionalArguments: [
-        `--allowCrashReporting=${allowCrashReporting ? "1" : "0"}`,
-        `--allowTelemetry=${allowTelemetry ? "1" : "0"}`,
+        `--allowCrashReporting=${crashReportingEnabled ? "1" : "0"}`,
+        `--allowTelemetry=${telemetryEnabled ? "1" : "0"}`,
         ...deepLinks,
       ],
       // Disable webSecurity in development so we can make XML-RPC calls, load
@@ -61,7 +60,6 @@ function newStudioWindow(deepLinks: string[] = []): BrowserWindow {
       // Access-Control-Allow-Origin check
       webSecurity: isProduction,
     },
-    backgroundColor: colors.background,
   };
   if (!isProduction) {
     const devIcon = getDevModeIcon();
@@ -252,17 +250,26 @@ function buildMenu(browserWindow: BrowserWindow): Menu {
         click: () => browserWindow.webContents.send("open-welcome-layout"),
       },
       {
-        label: "Message Path Syntax",
+        label: "Message path syntax",
         click: () => browserWindow.webContents.send("open-message-path-syntax-help"),
       },
       {
-        label: "Keyboard Shortcuts",
+        label: "Keyboard shortcuts",
         accelerator: "CommandOrControl+/",
         click: () => browserWindow.webContents.send("open-keyboard-shortcuts"),
       },
       {
-        label: "Learn More",
+        label: "Learn more",
         click: async () => await shell.openExternal("https://foxglove.dev"),
+      },
+      { type: "separator" } as const,
+      {
+        label: "License",
+        click: async () => await shell.openExternal("https://foxglove.dev/legal/studio-license"),
+      },
+      {
+        label: "Privacy",
+        click: async () => await shell.openExternal("https://foxglove.dev/legal/privacy"),
       },
       ...(isMac
         ? []

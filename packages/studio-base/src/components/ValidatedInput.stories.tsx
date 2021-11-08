@@ -12,8 +12,8 @@
 //   You may not use this file except in compliance with the License.
 
 import { storiesOf } from "@storybook/react";
-import { DEFAULT_CAMERA_STATE } from "regl-worldview";
 
+import { DEFAULT_CAMERA_STATE } from "@foxglove/regl-worldview";
 import Flex from "@foxglove/studio-base/components/Flex";
 import { triggerInputChange, triggerInputBlur } from "@foxglove/studio-base/stories/PanelSetup";
 import { createValidator, isNumber, ValidationResult } from "@foxglove/studio-base/util/validators";
@@ -113,52 +113,64 @@ storiesOf("components/ValidatedInput", module)
       </Flex>
     );
   })
-  .add("in editing mode, prop value change does not affect the input string", () => {
-    return (
-      <Flex>
-        <Example
-          onMount={(input) => {
-            // even though the prop object has changed, the input value is in sync with current editing value
-            triggerInputChange(input, "invalid_val");
-            setTimeout(() => {
-              triggerInputChange(input, "another_invalid_val");
-            }, 50);
-          }}
-        />
-      </Flex>
-    );
-  })
-  .add("in editing mode, prop change does not cause the textarea to scroll to bottom", () => {
-    const changedObj = { ...DEFAULT_CAMERA_STATE, distance: 100000000 };
-    return (
-      <Flex>
-        <Example
-          obj={DEFAULT_CAMERA_STATE}
-          onMount={(input) => {
-            setImmediate(() => {
-              // scroll to the top and start editing
-              input.scrollTop = 0;
-              triggerInputChange(input, JSON.stringify(changedObj, undefined, 2));
-            });
-          }}
-        />
-      </Flex>
-    );
-  })
-  .add("upon blur, the validation error stays", () => {
-    return (
-      <Flex>
-        <Example
-          obj={DEFAULT_CAMERA_STATE}
-          onMount={(input) => {
-            setImmediate(() => {
+  .add(
+    "in editing mode, prop value change does not affect the input string",
+    () => {
+      return (
+        <Flex>
+          <Example
+            onMount={(input) => {
+              // even though the prop object has changed, the input value is in sync with current editing value
               triggerInputChange(input, "invalid_val");
+              setTimeout(() => {
+                triggerInputChange(input, "another_invalid_val");
+              }, 50);
+            }}
+          />
+        </Flex>
+      );
+    },
+    { colorScheme: "dark" },
+  )
+  .add(
+    "in editing mode, prop change does not cause the textarea to scroll to bottom",
+    () => {
+      const changedObj = { ...DEFAULT_CAMERA_STATE, distance: 100000000 };
+      return (
+        <Flex>
+          <Example
+            obj={DEFAULT_CAMERA_STATE}
+            onMount={(input) => {
               setImmediate(() => {
-                triggerInputBlur(input);
+                // scroll to the top and start editing
+                input.scrollTop = 0;
+                triggerInputChange(input, JSON.stringify(changedObj, undefined, 2));
               });
-            });
-          }}
-        />
-      </Flex>
-    );
-  });
+            }}
+          />
+        </Flex>
+      );
+    },
+    { colorScheme: "dark" },
+  )
+  .add(
+    "upon blur, the validation error stays",
+    () => {
+      return (
+        <Flex>
+          <Example
+            obj={DEFAULT_CAMERA_STATE}
+            onMount={(input) => {
+              setImmediate(() => {
+                triggerInputChange(input, "invalid_val");
+                setImmediate(() => {
+                  triggerInputBlur(input);
+                });
+              });
+            }}
+          />
+        </Flex>
+      );
+    },
+    { colorScheme: "dark" },
+  );

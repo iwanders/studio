@@ -19,9 +19,11 @@ import EmptyState from "@foxglove/studio-base/components/EmptyState";
 import { useMessagePipeline } from "@foxglove/studio-base/components/MessagePipeline";
 import Panel from "@foxglove/studio-base/components/Panel";
 import PanelToolbar from "@foxglove/studio-base/components/PanelToolbar";
-import SelectableTimestamp from "@foxglove/studio-base/components/SelectableTimestamp";
 import clipboard from "@foxglove/studio-base/util/clipboard";
 import { formatDuration } from "@foxglove/studio-base/util/formatTime";
+
+import Timestamp from "./Timestamp";
+import helpContent from "./index.help.md";
 
 const STableContainer = styled.div`
   overflow-y: auto;
@@ -36,7 +38,7 @@ const STable = styled.div`
 
 const SRow = styled.div`
   &:nth-child(even) {
-    background: #333;
+    background: ${({ theme }) => theme.palette.neutralLighterAlt};
   }
 `;
 
@@ -54,7 +56,7 @@ const SCell = styled.div`
 
 const SHeader = styled.div`
   font-size: 14px;
-  border-bottom: #333 solid 2px;
+  border-bottom: ${({ theme }) => theme.semanticColors.bodyDivider} solid 2px;
 `;
 
 const STitle = styled.div`
@@ -76,7 +78,7 @@ function SourceInfo() {
   if (!startTime || !endTime) {
     return (
       <>
-        <PanelToolbar floating />
+        <PanelToolbar helpContent={helpContent} floating />
         <EmptyState>Waiting for data...</EmptyState>
       </>
     );
@@ -85,36 +87,16 @@ function SourceInfo() {
   const duration = subtractTimes(endTime, startTime);
   return (
     <>
-      <PanelToolbar floating />
+      <PanelToolbar helpContent={helpContent} floating />
       <STableContainer>
         <SHeader>
           <SHeaderItem>
             <STitle>Start time:</STitle>
-            <SelectableTimestamp
-              startTime={startTime}
-              endTime={endTime}
-              currentTime={startTime}
-              pausePlayback={() => {
-                // no-op
-              }}
-              seekPlayback={() => {
-                // no-op
-              }}
-            />
+            <Timestamp time={startTime} />
           </SHeaderItem>
           <SHeaderItem>
             <STitle>End Time:</STitle>
-            <SelectableTimestamp
-              startTime={startTime}
-              endTime={endTime}
-              currentTime={endTime}
-              pausePlayback={() => {
-                // no-op
-              }}
-              seekPlayback={() => {
-                // no-op
-              }}
-            />
+            <Timestamp time={endTime} />
           </SHeaderItem>
           <SHeaderItem>
             <STitle>Duration: {formatDuration(duration)}</STitle>
@@ -156,6 +138,6 @@ function SourceInfo() {
 
 SourceInfo.panelType = "SourceInfo";
 SourceInfo.defaultConfig = {};
-SourceInfo.supportsStrictMode = false;
+SourceInfo.supportsStrictMode = true;
 
 export default Panel(SourceInfo);

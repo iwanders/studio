@@ -21,7 +21,6 @@ import ChildToggle from "@foxglove/studio-base/components/ChildToggle";
 import Menu from "@foxglove/studio-base/components/Menu";
 import PanelList, { PanelSelection } from "@foxglove/studio-base/components/PanelList";
 import { useCurrentLayoutActions } from "@foxglove/studio-base/context/CurrentLayoutContext";
-import cssColors from "@foxglove/studio-base/styles/colors.module.scss";
 import { MosaicDropResult } from "@foxglove/studio-base/types/panels";
 import { getPanelIdForType } from "@foxglove/studio-base/util/layout";
 import { colors } from "@foxglove/studio-base/util/sharedStyleConstants";
@@ -33,8 +32,9 @@ const SDropTarget = styled.div<{ isOver: boolean }>`
   flex-direction: column;
   width: 100%;
   height: 100%;
-  background-color: ${({ isOver }) => (isOver ? cssColors.textDisabled : "transparent")};
-  border: ${({ isOver }) => (isOver ? `1px solid ${cssColors.textMuted}` : "none")};
+  background-color: ${({ isOver, theme }) =>
+    isOver ? theme.palette.neutralLighterAlt : "transparent"};
+  border: ${({ isOver, theme }) => (isOver ? `1px solid ${theme.palette.neutralLight}` : "none")};
 `;
 
 const SEmptyStateText = styled.div`
@@ -42,7 +42,7 @@ const SEmptyStateText = styled.div`
   margin: 16px 72px;
   text-align: center;
   line-height: 1.5;
-  color: rgba(247, 247, 243, 0.3);
+  color: ${({ theme }) => theme.semanticColors.disabledText};
 `;
 
 const SPickAPanelText = styled.div`

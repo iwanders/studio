@@ -3,7 +3,9 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 import {
   Checkbox,
+  ChoiceGroup,
   DirectionalHint,
+  IChoiceGroupOption,
   IComboBoxOption,
   SelectableOptionMenuItemType,
   Stack,
@@ -36,6 +38,32 @@ function formatTimezone(name: string) {
     return `${zoneAbbr} (${offsetStr})`;
   }
   return `${name} (${zoneAbbr}, ${offsetStr})`;
+}
+
+function ColorSchemeSettings(): JSX.Element {
+  const [colorScheme = "dark", setColorScheme] = useAppConfigurationValue<string>(
+    AppSetting.COLOR_SCHEME,
+  );
+  const options: IChoiceGroupOption[] = useMemo(
+    () => [
+      { key: "light", text: "Light", iconProps: { iconName: "WeatherSunny" } },
+      { key: "dark", text: "Dark", iconProps: { iconName: "WeatherMoon" } },
+      { key: "system", text: "Follow system", iconProps: { iconName: "CircleHalfFill" } },
+    ],
+    [],
+  );
+  return (
+    <ChoiceGroup
+      label="Color scheme"
+      options={options}
+      selectedKey={colorScheme}
+      onChange={(_event, option) => {
+        if (option != undefined) {
+          void setColorScheme(option.key);
+        }
+      }}
+    />
+  );
 }
 
 function TimezoneSettings(): React.ReactElement {
@@ -88,7 +116,11 @@ function TimezoneSettings(): React.ReactElement {
 
   const [filterText, setFilterText] = useState<string>("");
   const filteredItems = useMemo(() => {
-    const matchingItems = fuzzyFilter(timezoneItems, filterText, (item) => item.text);
+    const matchingItems = fuzzyFilter({
+      options: timezoneItems,
+      filter: filterText,
+      getText: (item) => item.text,
+    });
     return [...fixedItems, ...matchingItems];
   }, [fixedItems, timezoneItems, filterText]);
 
@@ -174,6 +206,24 @@ function RosHostname(): React.ReactElement {
   );
 }
 
+function RosPackagePath(): React.ReactElement {
+  const [rosPackagePath, setRosPackagePath] = useAppConfigurationValue<string>(
+    AppSetting.ROS_PACKAGE_PATH,
+  );
+
+  const os = OsContextSingleton;
+  const rosPackagePathPlaceholder = useMemo(() => os?.getEnvVar("ROS_PACKAGE_PATH"), [os]);
+
+  return (
+    <TextField
+      label="ROS_PACKAGE_PATH"
+      placeholder={rosPackagePathPlaceholder}
+      value={rosPackagePath ?? ""}
+      onChange={(_event, newValue) => void setRosPackagePath(newValue ? newValue : undefined)}
+    />
+  );
+}
+
 function SectionHeader({ children }: React.PropsWithChildren<unknown>) {
   const theme = useTheme();
   return (
@@ -208,13 +258,24 @@ export default function Preferences(): React.ReactElement {
           <SectionHeader>General</SectionHeader>
           <Stack tokens={{ childrenGap: theme.spacing.s1 }}>
             <Stack.Item>
+              <ColorSchemeSettings />
+            </Stack.Item>
+            <Stack.Item>
               <TimezoneSettings />
             </Stack.Item>
             <Stack.Item>
               <MessageFramerate />
             </Stack.Item>
+          </Stack>
+        </Stack.Item>
+        <Stack.Item>
+          <SectionHeader>ROS</SectionHeader>
+          <Stack tokens={{ childrenGap: theme.spacing.s1 }}>
             <Stack.Item>
               <RosHostname />
+            </Stack.Item>
+            <Stack.Item>
+              <RosPackagePath />
             </Stack.Item>
           </Stack>
         </Stack.Item>
@@ -237,8 +298,13 @@ export default function Preferences(): React.ReactElement {
           </Stack>
         </Stack.Item>
         <Stack.Item>
-          <SectionHeader>Experimental Features</SectionHeader>
-          <ExperimentalFeatureSettings />
+          <SectionHeader>Experimental features</SectionHeader>
+          <Stack tokens={{ childrenGap: theme.spacing.s1 }}>
+            <Text style={{ color: theme.palette.neutralSecondary }}>
+              These features are unstable and not recommended for daily use.
+            </Text>
+            <ExperimentalFeatureSettings />
+          </Stack>
         </Stack.Item>
       </Stack>
     </SidebarContent>

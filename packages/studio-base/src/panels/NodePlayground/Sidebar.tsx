@@ -11,6 +11,7 @@
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
 
+import { useTheme } from "@fluentui/react";
 import ArrowLeftBoldIcon from "@mdi/svg/svg/arrow-left-bold.svg";
 import DeleteIcon from "@mdi/svg/svg/delete.svg";
 import FileMultipleIcon from "@mdi/svg/svg/file-multiple.svg";
@@ -28,7 +29,6 @@ import nodePlaygroundDocs from "@foxglove/studio-base/panels/NodePlayground/inde
 import { Script } from "@foxglove/studio-base/panels/NodePlayground/script";
 import { getNodeProjectConfig } from "@foxglove/studio-base/players/UserNodePlayer/nodeTransformerWorker/typescript/projectConfig";
 import templates from "@foxglove/studio-base/players/UserNodePlayer/nodeTransformerWorker/typescript/templates";
-import userUtilsReadMe from "@foxglove/studio-base/players/UserNodePlayer/nodeTransformerWorker/typescript/userUtils/README.md";
 import { UserNodes } from "@foxglove/studio-base/types/panels";
 import { colors } from "@foxglove/studio-base/util/sharedStyleConstants";
 
@@ -43,9 +43,10 @@ const MenuWrapper = styled.div`
   }
 `;
 
-const ExplorerWrapper = styled.div`
+const ExplorerWrapper = styled.div<{ useThemeColors: boolean; show: boolean }>`
   display: ${({ show }: { show: boolean }) => (show ? "initial" : "none")};
-  background-color: ${colors.GRAY2};
+  background-color: ${({ useThemeColors, theme }) =>
+    useThemeColors ? theme.palette.neutralLighterAlt : colors.GRAY2};
   max-width: 325px;
   min-width: 275px;
   overflow: auto;
@@ -59,6 +60,7 @@ const ListItem = styled.li`
   justify-content: space-between;
   word-break: break-all;
   align-items: center;
+  color: ${colors.LIGHT1};
   background-color: ${({ selected }: { selected: boolean }) =>
     selected ? colors.DARK9 : "transparent"};
   > span {
@@ -85,6 +87,7 @@ const TemplateItem = styled.li`
     display: block;
     margin: 3px 0;
   }
+  color: ${colors.LIGHT1};
   &:hover {
     background-color: ${colors.DARK9};
   }
@@ -111,7 +114,7 @@ type NodesListProps = {
 const NodesList = ({ nodes, selectNode, deleteNode, collapse, selectedNodeId }: NodesListProps) => {
   return (
     <Flex col>
-      <SidebarTitle title={"nodes"} collapse={collapse} />
+      <SidebarTitle title="Nodes" collapse={collapse} />
       {Object.keys(nodes).map((nodeId) => {
         return (
           <ListItem
@@ -120,7 +123,7 @@ const NodesList = ({ nodes, selectNode, deleteNode, collapse, selectedNodeId }: 
             onClick={() => selectNode(nodeId)}
           >
             {nodes[nodeId]?.name}
-            <Icon onClick={() => deleteNode(nodeId)} medium>
+            <Icon onClick={() => deleteNode(nodeId)} size="medium">
               <DeleteIcon />
             </Icon>
           </ListItem>
@@ -155,14 +158,14 @@ const SidebarTitle = ({
   collapse: () => void;
 }) => (
   <Flex row style={{ alignItems: "center", color: colors.DARK9, padding: "5px" }}>
-    <h3 style={{ textTransform: "uppercase" }}>{title}</h3>
+    <h3>{title}</h3>
     {tooltip && (
-      <Icon style={{ cursor: "unset", marginLeft: "5px" }} medium tooltip={tooltip}>
+      <Icon style={{ cursor: "unset", marginLeft: "5px" }} size="xsmall" tooltip={tooltip}>
         <HelpCircleIcon />
       </Icon>
     )}
     <div style={{ display: "flex", justifyContent: "flex-end", flexGrow: 1 }}>
-      <Icon onClick={collapse} medium tooltip={"collapse"}>
+      <Icon onClick={collapse} size="medium" tooltip={"collapse"}>
         <ArrowLeftBoldIcon />
       </Icon>
     </div>
@@ -206,6 +209,8 @@ const Sidebar = ({
     [setScriptOverride],
   );
 
+  const theme = useTheme();
+
   const explorers = React.useMemo(
     () => ({
       nodes: (
@@ -219,20 +224,17 @@ const Sidebar = ({
       ),
       docs: (
         <SFlex>
-          <SidebarTitle title={"docs"} collapse={() => updateExplorer(undefined)} />
-          <TextContent style={{ backgroundColor: "transparent" }}>
+          <SidebarTitle title="Docs" collapse={() => updateExplorer(undefined)} />
+          <TextContent style={{ backgroundColor: theme.palette.neutralLighterAlt }}>
             {otherMarkdownDocsForTest ?? nodePlaygroundDocs}
           </TextContent>
-          <br />
-          <br />
-          <TextContent style={{ backgroundColor: "transparent" }}>{userUtilsReadMe}</TextContent>
         </SFlex>
       ),
       utils: (
         <Flex col style={{ position: "relative" }}>
           <SidebarTitle
             collapse={() => updateExplorer(undefined)}
-            title={"utilities"}
+            title="Utilities"
             tooltip={`You can import any of these modules into your node using the following syntax: 'import { .. } from "./pointClouds.ts".\n\nWant to contribute? Scroll to the bottom of the docs for details!`}
           />
           {utilityFiles.map(({ fileName, filePath }) => (
@@ -250,7 +252,7 @@ const Sidebar = ({
       templates: (
         <Flex col>
           <SidebarTitle
-            title={"templates"}
+            title="Templates"
             tooltip={"Create nodes from these templates"}
             collapse={() => updateExplorer(undefined)}
           />
@@ -271,6 +273,7 @@ const Sidebar = ({
       script,
       selectNode,
       selectedNodeId,
+      theme,
       updateExplorer,
       userNodes,
     ],
@@ -282,41 +285,41 @@ const Sidebar = ({
         <Icon
           dataTest="node-explorer"
           onClick={() => updateExplorer(nodesSelected ? undefined : "nodes")}
-          large
-          tooltip={"nodes"}
-          style={{ color: nodesSelected ? "inherit" : colors.DARK9, position: "relative" }}
+          size="large"
+          tooltip="Nodes"
+          style={{ color: nodesSelected ? colors.LIGHT1 : colors.DARK9, position: "relative" }}
         >
           <FileMultipleIcon />
         </Icon>
         <Icon
           dataTest="utils-explorer"
           onClick={() => updateExplorer(utilsSelected ? undefined : "utils")}
-          large
-          tooltip={"utilities"}
-          style={{ color: utilsSelected ? "inherit" : colors.DARK9 }}
+          size="large"
+          tooltip="Utilities"
+          style={{ color: utilsSelected ? colors.LIGHT1 : colors.DARK9 }}
         >
           <HammerWrenchIcon />
         </Icon>
         <Icon
           dataTest="templates-explorer"
           onClick={() => updateExplorer(templatesSelected ? undefined : "templates")}
-          large
-          tooltip={"templates"}
-          style={{ color: templatesSelected ? "inherit" : colors.DARK9 }}
+          size="large"
+          tooltip="Templates"
+          style={{ color: templatesSelected ? colors.LIGHT1 : colors.DARK9 }}
         >
           <TemplateIcon />
         </Icon>
         <Icon
           dataTest="docs-explorer"
           onClick={() => updateExplorer(docsSelected ? undefined : "docs")}
-          large
-          tooltip={"docs"}
-          style={{ color: docsSelected ? "inherit" : colors.DARK9 }}
+          size="large"
+          tooltip="Docs"
+          style={{ color: docsSelected ? colors.LIGHT1 : colors.DARK9 }}
         >
           <HelpCircleIcon />
         </Icon>
       </MenuWrapper>
-      <ExplorerWrapper show={explorer != undefined}>
+      <ExplorerWrapper useThemeColors={docsSelected} show={explorer != undefined}>
         {explorer != undefined && explorers[explorer]}
       </ExplorerWrapper>
     </>

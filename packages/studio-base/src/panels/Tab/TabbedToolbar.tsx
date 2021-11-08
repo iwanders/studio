@@ -28,7 +28,6 @@ import {
 } from "@foxglove/studio-base/panels/Tab/TabDndContext";
 import helpContent from "@foxglove/studio-base/panels/Tab/index.help.md";
 import { TabConfig } from "@foxglove/studio-base/types/layouts";
-import { colors } from "@foxglove/studio-base/util/sharedStyleConstants";
 
 const STabbedToolbar = styled.div<{ highlight: boolean }>`
   flex: 0 0;
@@ -37,7 +36,9 @@ const STabbedToolbar = styled.div<{ highlight: boolean }>`
   flex-direction: column;
 
   &:after {
-    border: 2px solid ${({ highlight }) => (highlight ? colors.DARK5 : "transparent")};
+    border: 2px solid
+      ${({ highlight, theme }) =>
+        highlight ? theme.semanticColors.listItemBackgroundChecked : "transparent"};
     content: "";
     height: 100%;
     left: 0;
@@ -108,7 +109,7 @@ export function TabbedToolbar(props: Props): JSX.Element {
             />
           ))}
           <Icon
-            small
+            size="small"
             fade
             dataTest="add-tab"
             tooltip="Add tab"

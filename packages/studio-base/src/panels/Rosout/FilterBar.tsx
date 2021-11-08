@@ -20,13 +20,14 @@ import {
   useTheme,
 } from "@fluentui/react";
 import ClipboardOutlineIcon from "@mdi/svg/svg/clipboard-outline.svg";
+import cx from "classnames";
 
 import Icon from "@foxglove/studio-base/components/Icon";
+import useLogStyles from "@foxglove/studio-base/panels/Rosout/useLogStyles";
 import { MessageEvent } from "@foxglove/studio-base/players/types";
 import clipboard from "@foxglove/studio-base/util/clipboard";
 
 import LevelToString, { KNOWN_LOG_LEVELS } from "./LevelToString";
-import logStyle from "./LogLevelColors.module.scss";
 import { RosgraphMsgs$Log } from "./types";
 
 // Create the log level options nodes once since they don't change per render.
@@ -50,24 +51,40 @@ export type FilterBarProps = {
 };
 
 // custom renderer for item in dropdown list to color text
-function renderOption(option: ISelectableOption | undefined) {
+function renderOption(
+  option: ISelectableOption | undefined,
+  logStyles: ReturnType<typeof useLogStyles>,
+) {
   if (!option) {
     return ReactNull;
   }
-  const className = logStyle[LevelToString(option.key as number).toLowerCase()];
+  const strLevel = LevelToString(option.key as number);
+
   return (
-    <div key={option.key} className={className}>
+    <div
+      key={option.key}
+      className={cx({
+        [logStyles.fatal]: strLevel === "FATAL",
+        [logStyles.error]: strLevel === "ERROR",
+        [logStyles.warn]: strLevel === "WARN",
+        [logStyles.info]: strLevel === "INFO",
+        [logStyles.debug]: strLevel === "DEBUG",
+      })}
+    >
       {option.text}
     </div>
   );
 }
 
 // custom renderer for selected dropdown item to color the text
-function renderTitle(option: IDropdownOption[] | undefined) {
-  if (!option) {
+function renderTitle(
+  options: IDropdownOption[] | undefined,
+  logStyles: ReturnType<typeof useLogStyles>,
+) {
+  if (!options) {
     return ReactNull;
   }
-  return <>{option.map(renderOption)}</>;
+  return <>{options.map((option) => renderOption(option, logStyles))}</>;
 }
 
 export default function FilterBar(props: FilterBarProps): JSX.Element {
@@ -78,11 +95,13 @@ export default function FilterBar(props: FilterBarProps): JSX.Element {
     key: term,
   }));
   const theme = useTheme();
+  const logStyles = useLogStyles();
   return (
     <Stack grow horizontal tokens={{ childrenGap: theme.spacing.s1 }}>
       <Dropdown
-        onRenderOption={renderOption}
-        onRenderTitle={renderTitle}
+        styles={{ title: { background: "transparent" } }}
+        onRenderOption={(option) => renderOption(option, logStyles)}
+        onRenderTitle={(options) => renderTitle(options, logStyles)}
         onChange={(_ev, option) => {
           if (option) {
             props.onFilterChange({
@@ -98,7 +117,7 @@ export default function FilterBar(props: FilterBarProps): JSX.Element {
       <Stack grow>
         <TagPicker
           inputProps={{
-            placeholder: "node name or message text",
+            placeholder: "Node name or message text",
           }}
           styles={{
             text: { minWidth: 0 },
@@ -129,7 +148,7 @@ export default function FilterBar(props: FilterBarProps): JSX.Element {
           style={{
             whiteSpace: "nowrap",
             padding: "0px 8px",
-            color: "rgba(255, 255, 255, 0.5)",
+            color: theme.palette.neutralTertiary,
           }}
         >
           {props.messages.length} {props.messages.length === 1 ? "item" : "items"}

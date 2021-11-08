@@ -21,7 +21,7 @@ import Icon from "@foxglove/studio-base/components/Icon";
 import { LegacyInput } from "@foxglove/studio-base/components/LegacyStyledComponents";
 import useGlobalVariables from "@foxglove/studio-base/hooks/useGlobalVariables";
 import GlobalVariableName from "@foxglove/studio-base/panels/ThreeDimensionalViz/Interactions/GlobalVariableName";
-import colors from "@foxglove/studio-base/styles/colors.module.scss";
+import { colors } from "@foxglove/studio-base/util/sharedStyleConstants";
 
 import useLinkedGlobalVariables from "../useLinkedGlobalVariables";
 import SGlobalVariableForm from "./SGlobalVariableForm";
@@ -52,6 +52,7 @@ export default function LinkToGlobalVariable({
   const [name, setName] = React.useState(() => getInitialName(markerKeyPath));
 
   const setIsOpen = React.useCallback(
+    // eslint-disable-next-line @foxglove/no-boolean-parameters
     (newValue: boolean) => {
       _setIsOpen(newValue);
       if (newValue) {
@@ -72,7 +73,7 @@ export default function LinkToGlobalVariable({
     setIsOpen(false);
   };
 
-  const highlightIconStyle = highlight ? { color: colors.highlight } : {};
+  const highlightIconStyle = highlight ? { color: colors.HIGHLIGHT } : {};
 
   return (
     <ChildToggle

@@ -13,7 +13,8 @@
 
 import { storiesOf } from "@storybook/react";
 import { useState, useCallback, useRef } from "react";
-import { Color } from "regl-worldview";
+
+import { Color } from "@foxglove/regl-worldview";
 
 import VisibilityToggle, { Size, TOGGLE_SIZE_CONFIG } from "./VisibilityToggle";
 
@@ -135,27 +136,64 @@ storiesOf("panels/ThreeDimensionalViz/TopicTree/VisibilityToggle", module)
       </div>
     );
   })
-  .add("focused when checked is false", () => {
-    return (
-      <Example
-        available
-        showFocused
-        visibleInScene
-        title="checked: false, visibleInScene: true, show focused state"
-      />
-    );
-  })
-  .add("focused state when checked is true", () => {
-    return (
-      <Example
-        available
-        showFocused
-        checked
-        visibleInScene
-        title="checked: true, visibleInScene: true, show focused state"
-      />
-    );
-  })
+  .add(
+    "focused when checked is false",
+    () => {
+      return (
+        <Example
+          available
+          showFocused
+          visibleInScene
+          title="checked: false, visibleInScene: true, show focused state"
+        />
+      );
+    },
+    { colorScheme: "dark" },
+  )
+  .add(
+    "focused state when checked is true",
+    () => {
+      return (
+        <Example
+          available
+          showFocused
+          checked
+          visibleInScene
+          title="checked: true, visibleInScene: true, show focused state"
+        />
+      );
+    },
+    { colorScheme: "dark" },
+  )
+  .add(
+    "focused when checked is false light",
+    () => {
+      return (
+        <Example
+          available
+          showFocused
+          visibleInScene
+          title="checked: false, visibleInScene: true, show focused state"
+        />
+      );
+    },
+    { colorScheme: "light" },
+  )
+  .add(
+    "focused state when checked is true light",
+    () => {
+      return (
+        <Example
+          available
+          showFocused
+          checked
+          visibleInScene
+          title="checked: true, visibleInScene: true, show focused state"
+        />
+      );
+    },
+    { colorScheme: "light" },
+  )
   .add("diff mode", () => {
     return (
       <div>

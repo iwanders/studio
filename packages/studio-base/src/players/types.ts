@@ -128,6 +128,9 @@ export type PlayerState = {
   // The player could set this value to represent the current connection, name, ports, etc.
   name?: string;
 
+  /** A path to a file on disk currently being accessed by the player */
+  filePath?: string;
+
   // Surface issues during playback or player initialization
   problems?: PlayerProblem[];
 
@@ -217,9 +220,6 @@ export type Topic = {
   name: string;
   // Name of the datatype (see `type PlayerStateActiveData` for details).
   datatype: string;
-  // The original topic name, if the topic name was at some point renamed, e.g. in
-  // RenameDataProvider.
-  originalTopic?: string;
   // The number of messages present on the topic. Valid only for sources with a fixed number of
   // messages, such as bags.
   numMessages?: number;
@@ -259,13 +259,6 @@ export type Frame = {
 export type SubscribePayload = {
   // The topic name to subscribe to.
   topic: string;
-
-  // A particular requested encoding.
-  // TODO(JP): Remove and derive from `scale` (= "image/compressed").
-  encoding?: string;
-
-  // Currently only used for images. Used for compressing the image.
-  scale?: number;
 
   // Optionally, where the request came from. Used in the "Internals" panel to improve debugging.
   requester?: { type: "panel" | "node" | "other"; name: string };
@@ -317,7 +310,7 @@ export interface PlayerMetricsCollectorInterface {
   close(): void;
   setSubscriptions(subscriptions: SubscribePayload[]): void;
   recordBytesReceived(bytes: number): void;
-  recordPlaybackTime(time: Time, stillLoadingData: boolean): void;
+  recordPlaybackTime(time: Time, params: { stillLoadingData: boolean }): void;
   recordDataProviderPerformance(metadata: AverageThroughput): void;
   recordUncachedRangeRequest(): void;
   recordTimeToFirstMsgs(): void;

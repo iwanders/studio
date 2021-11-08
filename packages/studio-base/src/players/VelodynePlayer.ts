@@ -142,11 +142,15 @@ export default class VelodynePlayer implements Player {
     }
   };
 
-  _handleMessage = (data: Uint8Array, rinfo: UdpRemoteInfo): void => {
+  private _handleMessage = (data: Uint8Array, rinfo: UdpRemoteInfo): void => {
     const receiveTime = fromMillis(Date.now());
     const date = toDate(receiveTime);
     date.setMinutes(0, 0, 0);
     const topOfHour = fromDate(date);
+
+    this._totalBytesReceived += data.byteLength;
+    this._presence = PlayerPresence.PRESENT;
+    this._clearProblem(PROBLEM_SOCKET_ERROR, { skipEmit: true });
 
     if (this._seq === 0) {
       this._metricsCollector.recordTimeToFirstMsgs();
@@ -184,7 +188,11 @@ export default class VelodynePlayer implements Player {
     }
   };
 
-  private _addProblem(id: string, problem: PlayerProblem, skipEmit = false): void {
+  private _addProblem(
+    id: string,
+    problem: PlayerProblem,
+    { skipEmit = false }: { skipEmit?: boolean } = {},
+  ): void {
     this._problemsById.set(id, problem);
     this._problems = Array.from(this._problemsById.values());
     if (!skipEmit) {
@@ -192,7 +200,7 @@ export default class VelodynePlayer implements Player {
     }
   }
 
-  private _clearProblem(id: string, skipEmit = false): void {
+  private _clearProblem(id: string, { skipEmit = false }: { skipEmit?: boolean } = {}): void {
     if (!this._problemsById.delete(id)) {
       return;
     }

@@ -14,6 +14,7 @@
 import { storiesOf } from "@storybook/react";
 
 import { PlayerStateActiveData } from "@foxglove/studio-base/players/types";
+import PanelSetup from "@foxglove/studio-base/stories/PanelSetup";
 
 import { UnconnectedPlaybackPerformance, UnconnectedPlaybackPerformanceProps } from ".";
 
@@ -42,7 +43,7 @@ function Example({ states }: { states: UnconnectedPlaybackPerformanceProps[] }) 
   return <UnconnectedPlaybackPerformance {...state[0]!} />;
 }
 
-storiesOf("panels/PlaybackPerformance/index", module).add("simple example", () => {
+storiesOf("panels/PlaybackPerformance", module).add("simple example", () => {
   const states = [
     {
       timestamp: 1000,
@@ -57,5 +58,9 @@ storiesOf("panels/PlaybackPerformance/index", module).add("simple example", () =
       },
     },
   ];
-  return <Example states={states} />;
+  return (
+    <PanelSetup>
+      <Example states={states} />
+    </PanelSetup>
+  );
 });

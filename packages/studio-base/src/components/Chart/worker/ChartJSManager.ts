@@ -20,7 +20,7 @@ import merge from "lodash/merge";
 
 import Logger from "@foxglove/log";
 import { RpcElement, RpcScales } from "@foxglove/studio-base/components/Chart/types";
-import { MONOSPACE } from "@foxglove/studio-base/styles/fonts";
+import { fonts } from "@foxglove/studio-base/util/sharedStyleConstants";
 
 const log = Logger.getLogger(__filename);
 
@@ -111,7 +111,7 @@ export default class ChartJSManager {
     const fullOptions: ChartOptions = {
       ...this.addFunctionsToConfig(options),
       devicePixelRatio,
-      font: { family: MONOSPACE },
+      font: { family: fonts.MONOSPACE },
       // we force responsive off since we manually trigger width/height updates on the chart
       // responsive mode does not work properly with offscreen canvases and retina device pixel ratios
       // it results in a run-away canvas that keeps doubling in size!
@@ -259,8 +259,8 @@ export default class ChartJSManager {
     const elements =
       this._chartInstance?.getElementsAtEventForMode(
         ev as unknown as Event,
-        this._chartInstance.options.hover?.mode ?? "intersect",
-        this._chartInstance.options.hover ?? {},
+        this._chartInstance.options.interaction?.mode ?? "intersect",
+        this._chartInstance.options.interaction ?? {},
         false,
       ) ?? [];
 
@@ -281,6 +281,18 @@ export default class ChartJSManager {
         data,
       });
     }
+
+    // sort elemtents by proximity to the cursor
+    out.sort((itemA, itemB) => {
+      const dxA = event.clientX - itemA.view.x;
+      const dyA = event.clientY - itemA.view.y;
+      const dxB = event.clientX - itemB.view.x;
+      const dyB = event.clientY - itemB.view.y;
+      const distSquaredA = dxA * dxA + dyA * dyA;
+      const distSquaredB = dxB * dxB + dyB * dyB;
+
+      return distSquaredA - distSquaredB;
+    });
 
     return out;
   }

@@ -2,9 +2,10 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 import EventEmitter from "eventemitter3";
-import { CameraState } from "regl-worldview";
 import * as THREE from "three";
 import { URDFRobot } from "urdf-loader";
+
+import { CameraState } from "@foxglove/regl-worldview";
 
 import { EventTypes } from "./index";
 
@@ -15,7 +16,7 @@ function cloneModel(robot: URDFRobot): URDFRobot {
     if (obj instanceof THREE.Mesh) {
       if (Array.isArray(obj.material)) {
         obj.material = obj.material.map((material) => material.clone());
-      } else if (obj.material) {
+      } else if (obj.material != undefined) {
         obj.material = obj.material.clone();
       }
     }
@@ -87,12 +88,12 @@ export class Renderer extends EventEmitter<EventTypes> {
           for (const material of obj.material) {
             material.opacity = opacity;
             material.transparent = opacity < 1;
-            material.depthWrite = !material.transparent;
+            material.depthWrite = !(material.transparent as boolean);
           }
-        } else if (obj.material) {
+        } else if (obj.material != undefined) {
           obj.material.opacity = opacity;
           obj.material.transparent = opacity < 1;
-          obj.material.depthWrite = !obj.material.transparent;
+          obj.material.depthWrite = !(obj.material.transparent as boolean);
         }
       }
     });

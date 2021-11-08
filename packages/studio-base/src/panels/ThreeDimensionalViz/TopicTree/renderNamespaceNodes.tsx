@@ -12,8 +12,8 @@
 //   You may not use this file except in compliance with the License.
 
 import { useCallback, useContext, useMemo } from "react";
-import { Color } from "regl-worldview";
 
+import { Color } from "@foxglove/regl-worldview";
 import useGuaranteedContext from "@foxglove/studio-base/hooks/useGuaranteedContext";
 import { ThreeDimensionalVizContext } from "@foxglove/studio-base/panels/ThreeDimensionalViz/ThreeDimensionalVizContext";
 import { TREE_SPACING } from "@foxglove/studio-base/panels/ThreeDimensionalViz/TopicTree/constants";
@@ -109,6 +109,7 @@ function NamespaceNodeRow({
   );
 
   const updateHoveredMarkerMatchers = useCallback(
+    // eslint-disable-next-line @foxglove/no-boolean-parameters
     (columnIndex: number, visible: boolean) => {
       if (visible) {
         const topic = [topicName, joinTopics(SECOND_SOURCE_PREFIX, topicName)][columnIndex];

@@ -37,7 +37,7 @@ describe("usePrompt", () => {
     });
 
     await expect(screen.findByText("test-title")).resolves.not.toBeNullOrUndefined();
-    const input = (await screen.findByPlaceholderText("test-placeholder")) as HTMLInputElement;
+    const input = await screen.findByPlaceholderText<HTMLInputElement>("test-placeholder");
     expect(input.value).toEqual("");
     unmount();
   });
@@ -69,13 +69,13 @@ describe("usePrompt", () => {
     act(() => {
       valPromise = result.current({
         title: "test-title",
-        value: "initial-value",
+        initialValue: "initial-value",
         placeholder: "some-placeholder",
       });
     });
     expect(valPromise).toBeDefined();
 
-    const input = (await screen.findByPlaceholderText("some-placeholder")) as HTMLInputElement;
+    const input = await screen.findByPlaceholderText<HTMLInputElement>("some-placeholder");
     expect(input.value).toEqual("initial-value");
 
     const submitButton = screen.getByText("OK");

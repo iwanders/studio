@@ -11,6 +11,7 @@
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
 
+import { makeStyles, useTheme } from "@fluentui/react";
 import CheckboxBlankOutlineIcon from "@mdi/svg/svg/checkbox-blank-outline.svg";
 import CheckboxMarkedIcon from "@mdi/svg/svg/checkbox-marked.svg";
 import CloseIcon from "@mdi/svg/svg/close.svg";
@@ -18,7 +19,6 @@ import MenuDownIcon from "@mdi/svg/svg/menu-down.svg";
 import WavesIcon from "@mdi/svg/svg/waves.svg";
 import cx from "classnames";
 import { last, uniq } from "lodash";
-import styled from "styled-components";
 
 import { filterMap } from "@foxglove/den/collection";
 import { useShallowMemo } from "@foxglove/hooks";
@@ -26,7 +26,6 @@ import * as PanelAPI from "@foxglove/studio-base/PanelAPI";
 import Autocomplete from "@foxglove/studio-base/components/Autocomplete";
 import Dropdown from "@foxglove/studio-base/components/Dropdown";
 import DropdownItem from "@foxglove/studio-base/components/Dropdown/DropdownItem";
-import dropDownStyles from "@foxglove/studio-base/components/Dropdown/index.module.scss";
 import EmptyState from "@foxglove/studio-base/components/EmptyState";
 import Flex from "@foxglove/studio-base/components/Flex";
 import Icon from "@foxglove/studio-base/components/Icon";
@@ -39,19 +38,16 @@ import useDeepMemo from "@foxglove/studio-base/hooks/useDeepMemo";
 import { IMAGE_DATATYPES } from "@foxglove/studio-base/panels/ImageView/renderImage";
 import { MessageEvent } from "@foxglove/studio-base/players/types";
 import inScreenshotTests from "@foxglove/studio-base/stories/inScreenshotTests";
-import colors from "@foxglove/studio-base/styles/colors.module.scss";
 import { CameraInfo, StampedMessage } from "@foxglove/studio-base/types/Messages";
 import { PanelConfigSchema, SaveConfig } from "@foxglove/studio-base/types/panels";
 import naturalSort from "@foxglove/studio-base/util/naturalSort";
 import { getTopicsByTopicName } from "@foxglove/studio-base/util/selectors";
-import { colors as sharedColors } from "@foxglove/studio-base/util/sharedStyleConstants";
 import { getSynchronizingReducers } from "@foxglove/studio-base/util/synchronizeMessages";
 import { formatTimeRaw, getTimestampForMessage } from "@foxglove/studio-base/util/time";
 import toggle from "@foxglove/studio-base/util/toggle";
 
 import ImageCanvas from "./ImageCanvas";
 import helpContent from "./index.help.md";
-import style from "./index.module.scss";
 import {
   getCameraInfoTopic,
   getCameraNamespace,
@@ -88,20 +84,71 @@ type Props = {
   saveConfig: SaveImagePanelConfig;
 };
 
-const TopicTimestampSpan = styled.span`
-  padding: 0px 15px 0px 0px;
-  font-size: 10px;
-  font-style: italic;
-`;
+const useStyles = makeStyles((theme) => ({
+  controls: {
+    display: "flex",
+    flexWrap: "wrap",
+    flex: "1 1 auto",
+    alignItems: "center",
+    overflow: "hidden",
 
-const SEmptyStateWrapper = styled.div`
-  width: 100%;
-  height: 100%;
-  background: ${sharedColors.DARK2};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
+    button: {
+      margin: "1px 4px 1px 0",
+    },
+  },
+  bottomBar: {
+    transition: "opacity 0.1s ease-in-out",
+    display: "flex",
+    flex: "0 0 auto",
+    flexDirection: "row",
+    backgroundColor: "transparent",
+    textAlign: "right",
+    position: "absolute",
+    right: 4,
+    paddingRight: 5,
+    bottom: 8,
+    zIndex: 100,
+    opacity: "0",
+
+    "&.inScreenshotTests": {
+      opacity: 1,
+    },
+    ".mosaic-window:hover &": {
+      opacity: "1",
+    },
+  },
+  dropdown: {
+    padding: "4px 8px !important",
+  },
+  dropdownTitle: {
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+    textOverflow: "ellipsis",
+    flexDhrink: 1,
+    display: "flex",
+    alignItems: "center",
+  },
+  dropdownItem: {
+    position: "relative",
+  },
+  emptyStateWrapper: {
+    width: "100%",
+    height: "100%",
+    background: theme.palette.neutralLighterAlt,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  toggleButton: {
+    display: "flex",
+    alignItems: "center",
+  },
+  topicTimestamp: {
+    padding: "0px 15px 0px 0px",
+    fontSize: 10,
+    fontStyle: "italic",
+  },
+}));
 
 const TopicTimestamp = ({
   text,
@@ -111,17 +158,29 @@ const TopicTimestamp = ({
   style?: {
     [key: string]: string;
   };
-}) => (text === "" ? ReactNull : <TopicTimestampSpan style={styleObj}>{text}</TopicTimestampSpan>);
+}) => {
+  const classes = useStyles();
+  return text === "" ? (
+    ReactNull
+  ) : (
+    <span className={classes.topicTimestamp} style={styleObj}>
+      {text}
+    </span>
+  );
+};
 
-const BottomBar = ({ children }: { children?: React.ReactNode }) => (
-  <div
-    className={cx(style["bottom-bar"], {
-      [style.inScreenshotTests!]: inScreenshotTests(),
-    })}
-  >
-    {children}
-  </div>
-);
+const BottomBar = ({ children }: { children?: React.ReactNode }) => {
+  const classes = useStyles();
+  return (
+    <div
+      className={cx(classes.bottomBar, {
+        inScreenshotTests: inScreenshotTests(),
+      })}
+    >
+      {children}
+    </div>
+  );
+};
 
 const ToggleComponent = ({
   text,
@@ -132,13 +191,14 @@ const ToggleComponent = ({
   disabled?: boolean;
   dataTest?: string;
 }) => {
+  const classes = useStyles();
   return (
     <LegacyButton
       style={{ maxWidth: "100%", padding: "4px 8px" }}
-      className={cx({ disabled })}
+      className={cx(classes.toggleButton, { disabled })}
       data-test={dataTest}
     >
-      <span className={dropDownStyles.title}>{text}</span>
+      <span className={classes.dropdownTitle}>{text}</span>
       <Icon style={{ marginLeft: 4 }}>
         <MenuDownIcon style={{ width: 14, height: 14, opacity: 0.5 }} />
       </Icon>
@@ -150,23 +210,29 @@ const canTransformMarkersByTopic = (topic: string) => !topic.includes("rect");
 
 // Group image topics by the first component of their name
 
-function renderEmptyState(
-  cameraTopic: string,
-  markerTopics: string[],
-  shouldSynchronize: boolean,
+function ImageEmptyState({
+  cameraTopic,
+  markerTopics,
+  shouldSynchronize,
+  messagesByTopic,
+}: {
+  cameraTopic: string;
+  markerTopics: string[];
+  shouldSynchronize: boolean;
   messagesByTopic: {
     [topic: string]: readonly MessageEvent<unknown>[];
-  },
-) {
+  };
+}) {
+  const classes = useStyles();
   if (cameraTopic === "") {
     return (
-      <SEmptyStateWrapper>
+      <div className={classes.emptyStateWrapper}>
         <EmptyState>Select a topic to view images</EmptyState>
-      </SEmptyStateWrapper>
+      </div>
     );
   }
   return (
-    <SEmptyStateWrapper>
+    <div className={classes.emptyStateWrapper}>
       <EmptyState>
         Waiting for images {markerTopics.length > 0 && "and markers"} on:
         <div>
@@ -207,11 +273,12 @@ function renderEmptyState(
           </>
         )}
       </EmptyState>
-    </SEmptyStateWrapper>
+    </div>
   );
 }
 
 function useOptionallySynchronizedMessages(
+  // eslint-disable-next-line @foxglove/no-boolean-parameters
   shouldSynchronize: boolean,
   topics: readonly PanelAPI.RequestedTopic[],
 ) {
@@ -265,6 +332,7 @@ const AddTopic = ({
 const NO_CUSTOM_OPTIONS: string[] = [];
 
 function ImageView(props: Props) {
+  const classes = useStyles();
   const { config, saveConfig } = props;
   const {
     cameraTopic,
@@ -272,6 +340,7 @@ function ImageView(props: Props) {
     transformMarkers,
     customMarkerTopicOptions = NO_CUSTOM_OPTIONS,
   } = config;
+  const theme = useTheme();
   const { topics } = PanelAPI.useDataSourceInfo();
   const cameraTopicFullObject = useMemo(
     () => getTopicsByTopicName(topics)[cameraTopic],
@@ -351,11 +420,11 @@ function ImageView(props: Props) {
     if (imageTopicsByNamespace.size === 0) {
       return (
         <Dropdown
-          btnClassname={style.dropdown}
+          btnClassname={classes.dropdown}
           toggleComponent={
             <ToggleComponent
               dataTest={"topics-dropdown"}
-              text={cameraTopic ? cameraTopic : "no image topics"}
+              text={cameraTopic ? cameraTopic : "No image topics"}
               disabled
             />
           }
@@ -408,7 +477,7 @@ function ImageView(props: Props) {
         toggleComponent={
           <ToggleComponent
             dataTest={"topics-dropdown"}
-            text={cameraTopic.length > 0 ? cameraTopic : "select a topic"}
+            text={cameraTopic.length > 0 ? cameraTopic : "Select a topic"}
           />
         }
         value={cameraTopic}
@@ -417,7 +486,7 @@ function ImageView(props: Props) {
         {items}
       </Dropdown>
     );
-  }, [cameraTopic, imageTopicsByNamespace, onChangeCameraTopic]);
+  }, [cameraTopic, classes.dropdown, imageTopicsByNamespace, onChangeCameraTopic]);
 
   const cameraInfoTopic = getCameraInfoTopic(cameraTopic);
   const cameraInfo = PanelAPI.useMessageReducer<CameraInfo | undefined>({
@@ -487,8 +556,8 @@ function ImageView(props: Props) {
         closeOnChange={false}
         onChange={onToggleMarkerName}
         value={enabledMarkerTopics}
-        text={availableAndEnabledMarkerTopics.length > 0 ? "markers" : "no markers"}
-        btnClassname={style.dropdown}
+        text={availableAndEnabledMarkerTopics.length > 0 ? "Markers" : "No markers"}
+        btnClassname={classes.dropdown}
       >
         {availableAndEnabledMarkerTopics.map((topic) => (
           <Item
@@ -501,7 +570,7 @@ function ImageView(props: Props) {
               )
             }
             key={topic}
-            className={style.dropdownItem}
+            className={classes.dropdownItem}
           >
             <span style={{ display: "inline-block", marginRight: "15px" }}>{topic}</span>
             <TopicTimestamp text={renderedMarkerTimestamps[topic] ?? ""} />
@@ -530,6 +599,8 @@ function ImageView(props: Props) {
   }, [
     addTopicsMenu,
     availableAndEnabledMarkerTopics,
+    classes.dropdown,
+    classes.dropdownItem,
     customMarkerTopicOptions,
     enabledMarkerTopics,
     onToggleMarkerName,
@@ -568,13 +639,13 @@ function ImageView(props: Props) {
   const toolbar = useMemo(() => {
     return (
       <PanelToolbar floating={cameraTopic !== ""} helpContent={helpContent}>
-        <div className={style.controls}>
+        <div className={classes.controls}>
           {imageTopicDropdown}
           {markerDropdown}
         </div>
       </PanelToolbar>
     );
-  }, [imageTopicDropdown, markerDropdown, cameraTopic]);
+  }, [cameraTopic, classes.controls, imageTopicDropdown, markerDropdown]);
 
   const renderBottomBar = () => {
     const canTransformMarkers = canTransformMarkersByTopic(cameraTopic);
@@ -603,9 +674,15 @@ function ImageView(props: Props) {
               : `Markers can be transformed by Foxglove Studio based on the camera model. Click to turn it on.`
           }
           fade
-          medium
+          size="medium"
         >
-          <WavesIcon style={{ color: transformMarkers ? colors.orange : colors.textBright }} />
+          <WavesIcon
+            style={{
+              color: transformMarkers
+                ? theme.semanticColors.warningBackground
+                : theme.semanticColors.disabledText,
+            }}
+          />
         </Icon>
       </BottomBar>
     );
@@ -617,8 +694,14 @@ function ImageView(props: Props) {
     <Flex col clip>
       {toolbar}
       {/* If rendered, EmptyState will hide the always-present ImageCanvas */}
-      {showEmptyState &&
-        renderEmptyState(cameraTopic, enabledMarkerTopics, shouldSynchronize, messagesByTopic)}
+      {showEmptyState && (
+        <ImageEmptyState
+          cameraTopic={cameraTopic}
+          markerTopics={enabledMarkerTopics}
+          shouldSynchronize={shouldSynchronize}
+          messagesByTopic={messagesByTopic}
+        />
+      )}
       {/* Always render the ImageCanvas because it's expensive to unmount and start up. */}
       {imageMessageToRender && (
         <ImageCanvas

@@ -41,7 +41,6 @@ const markers = {
   cube: [],
   cubeList: [],
   cylinder: [],
-  filledPolygon: [],
   glText: [],
   grid: [],
   instancedLineList: [],
@@ -49,6 +48,7 @@ const markers = {
   linedConvexHull: [],
   lineList: [marker("foo"), marker(`${SECOND_SOURCE_PREFIX}/foo`)],
   lineStrip: [],
+  mesh: [],
   pointcloud: [marker(`${SECOND_SOURCE_PREFIX}/foo`)],
   points: [],
   poseMarker: [],
@@ -56,7 +56,6 @@ const markers = {
   sphereList: [],
   text: [],
   triangleList: [],
-  overlayIcon: [],
 };
 
 const sharedExpected = {
@@ -65,7 +64,6 @@ const sharedExpected = {
   cube: [],
   cubeList: [],
   cylinder: [],
-  filledPolygon: [],
   glText: [],
   grid: [],
   instancedLineList: [],
@@ -73,6 +71,7 @@ const sharedExpected = {
   linedConvexHull: [],
   lineList: [],
   lineStrip: [],
+  mesh: [],
   pointcloud: [],
   points: [],
   poseMarker: [],
@@ -80,7 +79,6 @@ const sharedExpected = {
   sphereList: [],
   text: [],
   triangleList: [],
-  overlayIcon: [],
 };
 
 describe("getDiffBySource", () => {

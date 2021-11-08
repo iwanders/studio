@@ -13,8 +13,6 @@
 
 import styled from "styled-components";
 
-import colors from "@foxglove/studio-base/styles/colors.module.scss";
-
 type Props = {
   children: React.ReactNode;
   alignLeft?: boolean;
@@ -27,11 +25,10 @@ const Container = styled.div<Props>`
   justify-content: ${({ alignLeft = false }) => (alignLeft ? "left" : "center")};
   margin: 20px;
   line-height: 1.4;
-  color: ${colors.textMuted};
+  color: ${({ theme }) => theme.semanticColors.disabledText};
 
   code {
-    color: ${colors.highlight};
-    opacity: 0.5;
+    color: ${({ theme }) => theme.palette.accent};
     background: transparent;
     padding: 0;
   }

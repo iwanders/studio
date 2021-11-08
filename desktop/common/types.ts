@@ -48,6 +48,15 @@ type DesktopExtension = {
 };
 
 interface Desktop {
+  /** https://www.electronjs.org/docs/tutorial/represented-file */
+  setRepresentedFilename(path: string | undefined): Promise<void>;
+
+  /**
+   * Notify the app that the color scheme setting has changed and the native theme may need to be
+   * updated.
+   */
+  updateNativeColorScheme(): Promise<void>;
+
   // Get an array of deep links provided on app launch
   getDeepLinks: () => string[];
 

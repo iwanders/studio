@@ -2,6 +2,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
+import { useTheme } from "@fluentui/react";
 import { CSSProperties, RefCallback, useCallback, useMemo, useRef, useState } from "react";
 import { v4 as uuid } from "uuid";
 
@@ -18,6 +19,7 @@ import {
   MessagePipelineContext,
   useMessagePipeline,
 } from "@foxglove/studio-base/components/MessagePipeline";
+import { usePanelContext } from "@foxglove/studio-base/components/PanelContext";
 import PanelToolbar from "@foxglove/studio-base/components/PanelToolbar";
 import RemountOnValueChange from "@foxglove/studio-base/components/RemountOnValueChange";
 import {
@@ -30,7 +32,8 @@ import {
   PlayerCapabilities,
   PlayerState,
 } from "@foxglove/studio-base/players/types";
-import { SaveConfig } from "@foxglove/studio-base/types/panels";
+import { PanelConfig, SaveConfig } from "@foxglove/studio-base/types/panels";
+import { assertNever } from "@foxglove/studio-base/util/assertNever";
 
 const log = Logger.getLogger(__filename);
 
@@ -80,6 +83,7 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
   const requestBackfill = useMessagePipeline(selectRequestBackfill);
   const capabilities = useMessagePipeline(selectCapabilities);
   const seekPlayback = useMessagePipeline(selectSeekPlayback);
+  const { openSiblingPanel } = usePanelContext();
 
   const [panelId] = useState(() => uuid());
 
@@ -90,6 +94,8 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
 
   // To avoid updating extended message stores once message pipeline blocks are no longer updating
   // we store a ref to the blocks and only update stores when the ref is different
+  // Note: when subscribing to new topics this ref is unset to re-calculate the allFrames value with
+  // newly subscribed topics.
   const prevBlocksRef = useRef<unknown>(undefined);
 
   const [renderFn, setRenderFn] = useState<RenderFn | undefined>();
@@ -120,6 +126,8 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
   // It is sufficient for renderPanel to use the latest value when called.
   const hoverValueRef = useRef<typeof hoverValue>();
   hoverValueRef.current = hoverValue;
+
+  const colorScheme = useTheme().isInverted ? "dark" : "light";
 
   const renderPanel = useCallback(() => {
     rafRequestedRef.current = false;
@@ -208,6 +216,13 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
       }
     }
 
+    if (watchedFieldsRef.current.has("colorScheme")) {
+      if (colorScheme !== renderState.colorScheme) {
+        shouldRender = true;
+        renderState.colorScheme = colorScheme;
+      }
+    }
+
     if (!shouldRender) {
       return;
     }
@@ -228,7 +243,7 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
     } catch (err) {
       setError(err);
     }
-  }, [renderFn]);
+  }, [colorScheme, renderFn]);
 
   const messagePipelineSelector = useCallback(
     (ctx: MessagePipelineContext) => {
@@ -248,10 +263,26 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
 
   type PartialPanelExtensionContext = Omit<PanelExtensionContext, "panelElement">;
   const partialExtensionContext = useMemo<PartialPanelExtensionContext>(() => {
+    const layout: PanelExtensionContext["layout"] = {
+      addPanel({ position, type, updateIfExists, getState }) {
+        if (position === "sibling") {
+          openSiblingPanel({
+            panelType: type,
+            updateIfExists,
+            siblingConfigCreator: (existingConfig) => getState(existingConfig) as PanelConfig,
+          });
+          return;
+        }
+        assertNever(position, `Unsupported position for addPanel: ${position}`);
+      },
+    };
+
     return {
       initialState: configRef.current,
 
       saveState: saveConfig,
+
+      layout,
 
       seekPlayback: capabilities.includes(PlayerCapabilities.playbackControl)
         ? (stamp: number) => seekPlayback(fromSec(stamp))
@@ -286,6 +317,12 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
           return;
         }
 
+        // If the player has loaded all the blocks, the blocks reference won't change so our message
+        // pipeline handler for allFrames won't create a new set of all frames for the newly
+        // subscribed topic. To ensure a new set of allFrames with the newly subscribed topic is
+        // created, we unset the blocks ref which will force re-creating allFrames.
+        prevBlocksRef.current = undefined;
+
         const subscribePayloads = topics.map((topic) => ({ topic }));
         setSubscriptions(panelId, subscribePayloads);
         for (const topic of topics) {
@@ -295,42 +332,48 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
         requestBackfill();
       },
 
-      advertise: (topic: string, datatype: string, options) => {
-        const ctx = latestPipelineContextRef.current;
-        if (!ctx) {
-          throw new Error("Unable to advertise. There is no active connection.");
-        }
+      advertise: capabilities.includes(PlayerCapabilities.advertise)
+        ? (topic: string, datatype: string, options) => {
+            const ctx = latestPipelineContextRef.current;
+            if (!ctx) {
+              throw new Error("Unable to advertise. There is no active connection.");
+            }
 
-        const payload: AdvertiseOptions = {
-          topic,
-          datatype,
-          options,
-        };
-        advertisementsRef.current.set(topic, payload);
+            const payload: AdvertiseOptions = {
+              topic,
+              datatype,
+              options,
+            };
+            advertisementsRef.current.set(topic, payload);
 
-        ctx.setPublishers(panelId, Array.from(advertisementsRef.current.values()));
-      },
+            ctx.setPublishers(panelId, Array.from(advertisementsRef.current.values()));
+          }
+        : undefined,
 
-      unadvertise: (topic: string) => {
-        const ctx = latestPipelineContextRef.current;
-        if (!ctx) {
-          throw new Error("Unable to advertise. There is no active connection.");
-        }
+      unadvertise: capabilities.includes(PlayerCapabilities.advertise)
+        ? (topic: string) => {
+            const ctx = latestPipelineContextRef.current;
+            if (!ctx) {
+              throw new Error("Unable to advertise. There is no active connection.");
+            }
 
-        advertisementsRef.current.delete(topic);
-        ctx.setPublishers(panelId, Array.from(advertisementsRef.current.values()));
-      },
+            advertisementsRef.current.delete(topic);
+            ctx.setPublishers(panelId, Array.from(advertisementsRef.current.values()));
+          }
+        : undefined,
 
-      publish: (topic, message) => {
-        const ctx = latestPipelineContextRef.current;
-        if (!ctx) {
-          throw new Error("Unable to publish. There is no active connection.");
-        }
-        ctx.publish({
-          topic,
-          msg: message as Record<string, unknown>,
-        });
-      },
+      publish: capabilities.includes(PlayerCapabilities.advertise)
+        ? (topic, message) => {
+            const ctx = latestPipelineContextRef.current;
+            if (!ctx) {
+              throw new Error("Unable to publish. There is no active connection.");
+            }
+            ctx.publish({
+              topic,
+              msg: message as Record<string, unknown>,
+            });
+          }
+        : undefined,
 
       unsubscribeAll: () => {
         subscribedTopicsRef.current.clear();
@@ -338,14 +381,15 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
       },
     };
   }, [
-    capabilities,
-    clearHoverValue,
-    requestBackfill,
     saveConfig,
+    capabilities,
+    openSiblingPanel,
     seekPlayback,
+    clearHoverValue,
     setHoverValue,
     setSubscriptions,
     panelId,
+    requestBackfill,
   ]);
 
   const refCallback = useCallback<RefCallback<HTMLDivElement>>(

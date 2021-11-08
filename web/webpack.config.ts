@@ -100,7 +100,7 @@ const mainConfig = (env: unknown, argv: WebpackArgv): Configuration => {
       publicPath: "/",
 
       // Output filenames should include content hashes in order to cache bust when new versions are available
-      filename: "[name].[contenthash].js",
+      filename: isDev ? "[name].js" : "[name].[contenthash].js",
 
       path: path.resolve(__dirname, ".webpack"),
     },
@@ -115,7 +115,9 @@ const mainConfig = (env: unknown, argv: WebpackArgv): Configuration => {
         SIGNUP_API_URL: "https://foxglove.dev/api/signup",
         SLACK_INVITE_URL: "https://foxglove.dev/join-slack",
         OAUTH_CLIENT_ID: process.env.OAUTH_CLIENT_ID ?? "oSJGEAQm16LNF09FSVTMYJO5aArQzq8o",
-        FOXGLOVE_API_URL: process.env.FOXGLOVE_API_URL ?? "http://api.foxglove.dev",
+        FOXGLOVE_API_URL: process.env.FOXGLOVE_API_URL ?? "https://api.foxglove.dev",
+        FOXGLOVE_ACCOUNT_DASHBOARD_URL:
+          process.env.FOXGLOVE_ACCOUNT_DASHBOARD_URL ?? "https://console.foxglove.dev/dashboard",
       }),
       new CopyPlugin({
         patterns: [{ from: "../public" }],
@@ -130,19 +132,9 @@ const mainConfig = (env: unknown, argv: WebpackArgv): Configuration => {
       <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
       <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
       <title>Foxglove Studio</title>
-      ${
-        isDev
-          ? ""
-          : '<script src="https://chicken.foxglove.dev/script.js" data-site="NJCSCNBX" defer></script>'
-      }
     </head>
     <script>
       global = globalThis;
-      window.FabricConfig = ${
-        // don't load @fabricui fonts from Microsoft servers
-        // https://github.com/microsoft/fluentui/issues/10363
-        JSON.stringify({ fontBaseUrl: "" })
-      };
     </script>
     <body>
       <div id="root"></div>

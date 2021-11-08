@@ -10,17 +10,17 @@
 //   This source code is licensed under the Apache License, Version 2.0,
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
+
+import { makeStyles } from "@fluentui/react";
 import CheckIcon from "@mdi/svg/svg/check.svg";
 import DatabaseIcon from "@mdi/svg/svg/database.svg";
+import cx from "classnames";
 import { uniq } from "lodash";
 import { useMemo } from "react";
-import styled from "styled-components";
 
 import Dropdown from "@foxglove/studio-base/components/Dropdown";
 import Icon from "@foxglove/studio-base/components/Icon";
-import styles from "@foxglove/studio-base/components/PanelToolbar/index.module.scss";
 import { Topic } from "@foxglove/studio-base/players/types";
-import { colors } from "@foxglove/studio-base/util/sharedStyleConstants";
 
 type Props = {
   onChange: (topic: string) => void;
@@ -30,27 +30,40 @@ type Props = {
   defaultTopicToRender: string;
 };
 
-const SDiv = styled.div`
-  display: flex;
-  cursor: pointer;
-  padding: 8px;
-  height: 32px;
-`;
+const useStyles = makeStyles((theme) => ({
+  topic: {
+    display: "flex",
+    cursor: "pointer",
+    padding: 8,
+    height: 32,
+    color: theme.semanticColors.menuItemText,
+    ":hover": {
+      backgroundColor: theme.semanticColors.menuItemBackgroundHovered,
+    },
+  },
+  topicLabel: {
+    flex: "flex-start",
+    minWidth: 150,
+    height: 17,
+  },
+  checkIcon: {
+    flex: "flex-end",
 
-const SSpan = styled.span`
-  flex: flex-start;
-  min-width: 150px;
-  height: 17px;
-`;
-
-const SIconSpan = styled.span`
-  flex: flex-end;
-  svg {
-    fill: white;
-    width: 15px;
-    height: 15px;
-  }
-`;
+    svg: {
+      fill: theme.semanticColors.menuIcon,
+      width: 15,
+      height: 15,
+    },
+  },
+  icon: {
+    fontSize: 14,
+    margin: "0 0.2em",
+    color: theme.semanticColors.warningBackground,
+  },
+  iconActive: {
+    color: theme.palette.neutralPrimary,
+  },
+}));
 
 export default function TopicToRenderMenu({
   onChange,
@@ -59,6 +72,7 @@ export default function TopicToRenderMenu({
   allowedDatatypes,
   defaultTopicToRender,
 }: Props): JSX.Element {
+  const styles = useStyles();
   const allowedDatatypesSet = useMemo(() => new Set(allowedDatatypes), [allowedDatatypes]);
   const availableTopics: string[] = [];
   for (const topic of topics) {
@@ -68,14 +82,12 @@ export default function TopicToRenderMenu({
   }
   // Keeps only the first occurrence of each topic.
   const renderTopics: string[] = uniq([defaultTopicToRender, ...availableTopics, topicToRender]);
-  const parentTopicSpan = (topic: string, available: boolean) => {
-    const topicDiv =
-      topic.length > 0 ? topic : <span style={{ fontStyle: "italic" }}>Default</span>;
+  const parentTopicSpan = ({ topic, available }: { topic: string; available: boolean }) => {
     return (
-      <span>
-        {topicDiv}
+      <>
+        {topic.length > 0 ? topic : <em>Default</em>}
         {available ? "" : " (not available)"}
-      </span>
+      </>
     );
   };
 
@@ -86,28 +98,33 @@ export default function TopicToRenderMenu({
           fade
           tooltip={`Supported datatypes: ${allowedDatatypes.join(", ")}`}
           tooltipProps={{ placement: "top" }}
-          style={{ color: topicToRender === defaultTopicToRender ? colors.LIGHT1 : colors.ORANGE }}
           dataTest={"topic-set"}
         >
-          <DatabaseIcon className={styles.icon} />
+          <DatabaseIcon
+            className={cx(styles.icon, {
+              [styles.iconActive]: topicToRender === defaultTopicToRender,
+            })}
+          />
         </Icon>
       }
     >
       {renderTopics.map((topic) => (
-        <SDiv
-          style={topicToRender === topic ? { backgroundColor: "rgba(59, 46, 118, 0.6)" } : {}}
+        <div
+          className={styles.topic}
           key={topic}
           onClick={() => {
             onChange(topic);
           }}
         >
-          <SSpan>{parentTopicSpan(topic, availableTopics.includes(topic))}</SSpan>
+          <span className={styles.topicLabel}>
+            {parentTopicSpan({ topic, available: availableTopics.includes(topic) })}
+          </span>
           {topicToRender === topic && (
-            <SIconSpan>
+            <span className={styles.checkIcon}>
               <CheckIcon />
-            </SIconSpan>
+            </span>
           )}
-        </SDiv>
+        </div>
       ))}
     </Dropdown>
   );

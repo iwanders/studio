@@ -79,34 +79,38 @@ const commonProps: Props = {
   type: "scatter",
   xAxes: {
     ticks: { precision: 3 },
-    grid: { color: "rgba(255, 255, 255, 0.2)" },
+    grid: { color: "rgba(187, 187, 187, 0.2)" },
   },
   yAxes: {
     ticks: { precision: 3 },
-    grid: { color: "rgba(255, 255, 255, 0.2)" },
+    grid: { color: "rgba(187, 187, 187, 0.2)" },
   },
   xAxisIsPlaybackTime: true,
 };
 
 export default {
-  title: "components/TimeBasedChart/index",
+  title: "components/TimeBasedChart",
   component: TimeBasedChart,
   parameters: {
     chromatic: {
       delay: 50,
     },
+    colorScheme: "dark",
   },
 };
 
 export function Simple(): JSX.Element {
   return (
-    <div style={{ width: "100%", height: "100%", background: "black" }}>
+    <div style={{ width: "100%", height: "100%" }}>
       <MockMessagePipelineProvider>
         <TimeBasedChart {...commonProps} />
       </MockMessagePipelineProvider>
     </div>
   );
 }
+export const SimpleLight = Object.assign(Simple.bind(undefined), {
+  parameters: { colorScheme: "light" },
+});
 
 // zoom and update without resetting zoom
 export function CanZoomAndUpdate(): JSX.Element {
@@ -169,6 +173,8 @@ export function CleansUpTooltipOnUnmount(_args: unknown): JSX.Element | ReactNul
     const { top, left } = canvas!.getBoundingClientRect();
     // wait for chart to render before triggering tooltip
     let tooltip: Element | undefined;
+
+    TestUtils.Simulate.mouseEnter(canvas!);
     for (let i = 0; !tooltip && i < 20; i++) {
       TestUtils.Simulate.mouseMove(canvas!, { clientX: 333 + left, clientY: 650 + top });
       await new Promise((resolve) => setTimeout(resolve, 100));

@@ -2,7 +2,6 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import { IRawStyleBase } from "@fluentui/merge-styles";
 import {
   DirectionalHint,
   ICalloutProps,
@@ -10,7 +9,7 @@ import {
   useTheme,
   ICalloutContentStyles,
 } from "@fluentui/react";
-import { Fragment, useCallback, useRef, useState } from "react";
+import { useCallback, Fragment, useRef, useState } from "react";
 
 type Contents = React.ReactNode | (() => React.ReactNode);
 
@@ -51,36 +50,17 @@ export function useTooltip({
   );
   const theme = useTheme();
 
-  const titlebarHeight = (theme.components?.Titlebar?.styles as { root?: IRawStyleBase })?.root
-    ?.height;
-
   // Styles which ideally we would be able to set in the theme for all Tooltips:
   // https://github.com/microsoft/fluentui/discussions/17772
   const calloutProps: ICalloutProps & { styles: Partial<ICalloutContentStyles> } = {
     beakWidth: 8,
     styles: {
       root: {
-        color: theme.palette.black,
         selectors: { code: { backgroundColor: "transparent", padding: 0 } },
       },
-      beak: { background: theme.palette.neutralDark },
-      beakCurtain: { background: theme.palette.neutralDark },
-      calloutMain: { background: theme.palette.neutralDark },
-    },
-    // Customize bounds to leave space for the window traffic light icons
-    bounds: (_target, win) => {
-      if (!win) {
-        return undefined;
-      }
-      const rect = {
-        top: typeof titlebarHeight === "string" ? parseFloat(titlebarHeight) : 8,
-        left: 8,
-        bottom: win.innerHeight - 8,
-        right: win.innerWidth - 8,
-        width: win.innerWidth - 2 * 8,
-        height: win.innerHeight - 2 * 8,
-      };
-      return rect;
+      beak: { background: theme.palette.neutralLighter },
+      beakCurtain: { background: theme.palette.neutralLighter },
+      calloutMain: { background: theme.palette.neutralLighter },
     },
   };
 
@@ -163,12 +143,18 @@ export function useTooltip({
 }
 
 export default function Tooltip(
-  props: Props & { children: React.ReactElement },
+  props: Props & { children?: React.ReactElement },
 ): React.ReactElement | ReactNull {
   const { children } = props;
   const { ref, tooltip } = useTooltip(props);
+
+  if (!children) {
+    return tooltip;
+  }
+
   const child = React.Children.only(children);
   const host = React.cloneElement(child, { ref });
+
   return (
     // When studio-base is packaged for npm, we saw strange issues where React would warn about
     // missing keys on these children, so we add explicit keys.

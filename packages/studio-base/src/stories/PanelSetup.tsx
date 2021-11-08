@@ -26,6 +26,7 @@ import {
   useCurrentLayoutActions,
   useSelectedPanels,
 } from "@foxglove/studio-base/context/CurrentLayoutContext";
+import { HoverValueProvider } from "@foxglove/studio-base/context/HoverValueContext";
 import PanelCatalogContext, {
   PanelCatalog,
   PanelInfo,
@@ -122,7 +123,7 @@ export const MosaicWrapper = ({ children }: { children: React.ReactNode }): JSX.
   return (
     <DndProvider backend={HTML5Backend}>
       <Mosaic
-        className="none"
+        className="mosaic-foxglove-theme" // prevent the default mosaic theme from being applied
         initialValue="mock"
         renderTile={(_id, path) => {
           return (
@@ -284,9 +285,11 @@ function UnconnectedPanelSetup(props: Props): JSX.Element | ReactNull {
 export default function PanelSetup(props: Props): JSX.Element {
   return (
     <UserNodeStateProvider>
-      <MockCurrentLayoutProvider>
-        <UnconnectedPanelSetup {...props} />
-      </MockCurrentLayoutProvider>
+      <HoverValueProvider>
+        <MockCurrentLayoutProvider>
+          <UnconnectedPanelSetup {...props} />
+        </MockCurrentLayoutProvider>
+      </HoverValueProvider>
     </UserNodeStateProvider>
   );
 }

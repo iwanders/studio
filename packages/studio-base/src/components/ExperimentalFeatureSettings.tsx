@@ -11,7 +11,7 @@
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
 
-import { Toggle, Stack, Text, useTheme } from "@fluentui/react";
+import { Stack, Text, useTheme, Checkbox } from "@fluentui/react";
 
 import { AppSetting } from "@foxglove/studio-base/AppSetting";
 import { useAppConfigurationValue } from "@foxglove/studio-base/hooks/useAppConfigurationValue";
@@ -25,13 +25,23 @@ type Feature = {
 const features: Feature[] = [
   {
     key: AppSetting.UNLIMITED_MEMORY_CACHE,
-    name: "Unlimited in-memory cache (requires restart)",
-    description: <>Fully buffer a bag into memory. This may use up a lot of system memory.</>,
+    name: "Unlimited in-memory cache",
+    description: (
+      <>
+        Fully buffer a bag into memory. This may use up a lot of system memory. Changing this
+        setting requires a restart.
+      </>
+    ),
   },
   {
     key: AppSetting.SHOW_DEBUG_PANELS,
-    name: "Studio Debug Panels",
-    description: <>Show Foxglove Studio debug panels in the add panel list.</>,
+    name: "Studio debug panels",
+    description: <>Show Foxglove Studio debug panels in the &ldquo;Add panel&rdquo; list.</>,
+  },
+  {
+    key: AppSetting.ENABLE_FIELD_MATCHING,
+    name: "Include fields names in message path search",
+    description: <>Match field names as well as topics in message path autocomplete search</>,
   },
   {
     key: AppSetting.ENABLE_DRAWING_POLYGONS,
@@ -40,36 +50,57 @@ const features: Feature[] = [
   },
   {
     key: AppSetting.ENABLE_LEGACY_PLOT_PANEL,
-    name: "Legacy Plot Panel",
-    description: <>Enable the legacy plot panel.</>,
-  },
-  {
-    key: AppSetting.ENABLE_CONSOLE_API_LAYOUTS,
-    name: "Team Shared Layouts",
-    description: <>Enable team layout sharing when signed in to Foxglove Studio.</>,
+    name: "Legacy Plot panel",
+    description: <>Enable the Legacy Plot panel.</>,
   },
 ];
+if (process.env.NODE_ENV === "development") {
+  features.push({
+    key: AppSetting.ENABLE_LAYOUT_DEBUGGING,
+    name: "Layout debugging",
+    description: <>Show extra controls for developing and debugging layout storage.</>,
+  });
+}
 
 function ExperimentalFeatureItem(props: { feature: Feature }) {
+  const theme = useTheme();
   const { feature } = props;
 
   const [enabled, setEnabled] = useAppConfigurationValue<boolean>(feature.key);
   return (
-    <Stack>
-      <Stack horizontal>
-        <Stack grow>
-          <Text as="h2" variant="medium">
-            {feature.name}
-          </Text>
-        </Stack>
-        <Toggle
-          checked={enabled}
-          onChange={(_, checked) => void setEnabled(checked)}
-          onText="Enabled"
-          offText="Disabled"
-        />
-      </Stack>
-      <div>{feature.description}</div>
+    <Stack grow tokens={{ childrenGap: theme.spacing.s2 }}>
+      <Checkbox
+        onRenderLabel={() => {
+          return (
+            <Stack
+              tokens={{ childrenGap: theme.spacing.s2 }}
+              styles={{ root: { paddingLeft: theme.spacing.s2 } }}
+            >
+              <Text variant="medium" styles={{ root: { fontWeight: 600 } }}>
+                {feature.name}
+              </Text>
+              <Text
+                variant="smallPlus"
+                styles={{
+                  root: {
+                    color: theme.semanticColors.bodySubtext,
+                  },
+                }}
+              >
+                {feature.description}
+              </Text>
+            </Stack>
+          );
+        }}
+        checked={enabled}
+        onChange={(_, checked) => void setEnabled(checked)}
+        styles={{
+          text: {
+            minWidth: 60,
+          },
+          label: { alignItems: "baseline" },
+        }}
+      />
     </Stack>
   );
 }

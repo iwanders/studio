@@ -49,10 +49,10 @@ const playerOptions: RandomAccessPlayerOptions = {
 type PlayerStateWithoutPlayerId = Omit<PlayerState, "playerId">;
 
 class MessageStore {
-  _messages: PlayerStateWithoutPlayerId[] = [];
+  private _messages: PlayerStateWithoutPlayerId[] = [];
   done: Promise<PlayerStateWithoutPlayerId[]>;
-  _expected: number;
-  _resolve: (arg0: PlayerStateWithoutPlayerId[]) => void = () => {
+  private _expected: number;
+  private _resolve: (arg0: PlayerStateWithoutPlayerId[]) => void = () => {
     // no-op
   };
   constructor(expected: number) {
@@ -110,7 +110,7 @@ describe("RandomAccessPlayer", () => {
     expect(messages).toEqual([
       {
         activeData: undefined,
-        capabilities: [PlayerCapabilities.setSpeed, PlayerCapabilities.playbackControl],
+        capabilities: [],
         presence: PlayerPresence.INITIALIZING,
         progress: {},
       },
@@ -143,8 +143,6 @@ describe("RandomAccessPlayer", () => {
         progress: {},
       },
     ]);
-    // make sure capabilities don't change from one message to another
-    expect(messages[0]?.capabilities).toBe(messages[1]?.capabilities);
 
     source.close();
   });
@@ -858,7 +856,7 @@ describe("RandomAccessPlayer", () => {
       playerOptions,
     );
     let callCount = 0;
-    let backfillPromiseCallback: any;
+    let backfillPromiseCallback: ((_: GetMessagesResult) => void) | undefined;
     provider.getMessages = async (
       start: Time,
       end: Time,
@@ -957,7 +955,14 @@ describe("RandomAccessPlayer", () => {
     source.setSubscriptions([{ topic: "/foo/bar" }]);
     source.requestBackfill(); // We always get a `requestBackfill` after each `setSubscriptions`.
 
-    let lastGetMessagesCall: any;
+    let lastGetMessagesCall:
+      | {
+          start: Time;
+          end: Time;
+          topics: GetMessagesTopics;
+          resolve: (_: GetMessagesResult) => void;
+        }
+      | undefined;
     const getMessages = async (
       start: Time,
       end: Time,
@@ -984,9 +989,6 @@ describe("RandomAccessPlayer", () => {
     source.seekPlayback({ sec: 0, nsec: 250 });
 
     await delay(1);
-    if (!lastGetMessagesCall) {
-      throw new Error("lastGetMessagesCall not set");
-    }
     lastGetMessagesCall.resolve(getMessagesResult);
     expect(lastGetMessagesCall).toEqual({
       start: { sec: 10, nsec: 0 }, // Clamped to start
@@ -1349,11 +1351,11 @@ describe("RandomAccessPlayer", () => {
 
   describe("metrics collecting", () => {
     class TestMetricsCollector implements PlayerMetricsCollectorInterface {
-      _initialized: number = 0;
-      _played: number = 0;
-      _paused: number = 0;
-      _seeked: number = 0;
-      _speed: number[] = [];
+      private _initialized: number = 0;
+      private _played: number = 0;
+      private _paused: number = 0;
+      private _seeked: number = 0;
+      private _speed: number[] = [];
 
       setProperty(_key: string, _value: string | number | boolean): void {
         // no-op
@@ -1442,10 +1444,6 @@ describe("RandomAccessPlayer", () => {
         });
       });
       source.setListener(listener);
-      // appease Flow
-      if (!resolveListener) {
-        throw new Error("listener wasn't called");
-      }
       await Promise.resolve();
       expect(metricsCollector.stats()).toEqual({
         initialized: 1,

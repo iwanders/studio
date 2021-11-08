@@ -15,12 +15,12 @@ import styled from "styled-components";
 
 import { usePanelContext } from "@foxglove/studio-base/components/PanelContext";
 import Tooltip from "@foxglove/studio-base/components/Tooltip";
-import colors from "@foxglove/studio-base/styles/colors.module.scss";
 import { PanelConfig } from "@foxglove/studio-base/types/panels";
+import { colors } from "@foxglove/studio-base/util/sharedStyleConstants";
 
 const STopicLink = styled.span`
   cursor: pointer;
-  color: ${colors.highlight};
+  color: ${colors.HIGHLIGHT};
 `;
 
 type Props = {
@@ -30,10 +30,14 @@ type Props = {
 export default function TopicLink({ topic }: Props): JSX.Element {
   const { openSiblingPanel } = usePanelContext();
   const openRawMessages = React.useCallback(() => {
-    openSiblingPanel("RawMessages", (config: PanelConfig) => ({
-      ...config,
-      topicPath: topic,
-    }));
+    openSiblingPanel({
+      panelType: "RawMessages",
+      updateIfExists: true,
+      siblingConfigCreator: (config: PanelConfig) => ({
+        ...config,
+        topicPath: topic,
+      }),
+    });
   }, [openSiblingPanel, topic]);
 
   return (

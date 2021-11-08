@@ -15,7 +15,7 @@
 // instances of web-workers and shared-workers respectively, as well as avaiable on
 // 'global' within them.
 export interface Channel {
-  postMessage(data: unknown, transfer?: Transferable[]): void;
+  postMessage(data: unknown, transfer?: (Transferable | OffscreenCanvas)[]): void;
   onmessage?: ((ev: MessageEvent) => unknown) | null; // eslint-disable-line no-restricted-syntax
   terminate: () => void;
 }
@@ -67,14 +67,14 @@ export function createLinkedChannels(): { local: Channel; remote: Channel } {
 // Check out the tests for more examples.
 export default class Rpc {
   static transferables = "$$TRANSFERABLES";
-  _channel: Omit<Channel, "terminate">;
-  _messageId: number = 0;
-  _pendingCallbacks: {
+  private _channel: Omit<Channel, "terminate">;
+  private _messageId: number = 0;
+  private _pendingCallbacks: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: number]: (arg0: any) => void;
   } = {};
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  _receivers: Map<string, (arg0: any) => any> = new Map();
+  private _receivers: Map<string, (arg0: any) => any> = new Map();
 
   constructor(channel: Omit<Channel, "terminate">) {
     this._channel = channel;
@@ -86,7 +86,7 @@ export default class Rpc {
     this._channel.onmessage = this._onChannelMessage;
   }
 
-  _onChannelMessage = (ev: MessageEvent): void => {
+  private _onChannelMessage = (ev: MessageEvent): void => {
     const { id, topic, data } = ev.data;
     if (topic === RESPONSE) {
       this._pendingCallbacks[id]?.(ev.data);
@@ -133,12 +133,16 @@ export default class Rpc {
   // send a message across the rpc boundary to a receiver on the other side
   // this returns a promise for the receiver's response.  If there is no registered
   // receiver for the given topic, this method throws
-  async send<TResult>(topic: string, data?: unknown, transfer?: Transferable[]): Promise<TResult> {
+  async send<TResult>(
+    topic: string,
+    data?: unknown,
+    transfer?: (Transferable | OffscreenCanvas)[],
+  ): Promise<TResult> {
     const id = this._messageId++;
     const message = { topic, id, data };
     const result = new Promise<TResult>((resolve, reject) => {
       this._pendingCallbacks[id] = (info) => {
-        if (info.data?.[ERROR]) {
+        if (info.data?.[ERROR] != undefined) {
           const error = new Error(info.data.message);
           error.name = info.data.name;
           error.stack = info.data.stack;

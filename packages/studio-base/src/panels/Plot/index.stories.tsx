@@ -318,12 +318,13 @@ const exampleConfig: PlotConfig = {
   paths,
   minYValue: "",
   maxYValue: "",
-  showLegend: true,
   xAxisVal: "timestamp",
+  showLegend: true,
+  isSynced: true,
 };
 
 export default {
-  title: "panels/Plot/index",
+  title: "panels/Plot",
   component: Plot,
   parameters: {
     chromatic: { delay: 50 },
@@ -439,6 +440,7 @@ export function LineGraphAfterZoom(): JSX.Element {
 }
 LineGraphAfterZoom.parameters = {
   useReadySignal: true,
+  colorScheme: "dark",
 };
 
 TimestampMethodHeaderStamp.storyName = "timestampMethod: headerStamp";
@@ -533,7 +535,7 @@ export function ReferenceLine(): JSX.Element {
     <PanelSetup fixture={fixture} pauseFrame={pauseFrame}>
       <Plot
         overrideConfig={{
-          xAxisVal: "timestamp",
+          ...exampleConfig,
           paths: [
             { value: "0", enabled: true, timestampMethod: "receiveTime" }, // Test typing a period for decimal values. value: "1.", enabled: true, timestampMethod: "receiveTime",
             { value: "1.", enabled: true, timestampMethod: "receiveTime" },
@@ -542,7 +544,6 @@ export function ReferenceLine(): JSX.Element {
           ],
           minYValue: "-1",
           maxYValue: "2",
-          showLegend: true,
         }}
       />
     </PanelSetup>
@@ -561,7 +562,7 @@ export function WithMinAndMaxYValues(): JSX.Element {
     <PanelSetup fixture={fixture} pauseFrame={pauseFrame}>
       <Plot
         overrideConfig={{
-          xAxisVal: "timestamp",
+          ...exampleConfig,
           paths: [
             {
               value: "/some_topic/location.pose.velocity",
@@ -571,7 +572,6 @@ export function WithMinAndMaxYValues(): JSX.Element {
           ],
           minYValue: "1",
           maxYValue: "2.8",
-          showLegend: true,
         }}
       />
     </PanelSetup>
@@ -590,7 +590,7 @@ export function WithJustMinYValueLessThanMinimumValue(): JSX.Element {
     <PanelSetup fixture={fixture} pauseFrame={pauseFrame}>
       <Plot
         overrideConfig={{
-          xAxisVal: "timestamp",
+          ...exampleConfig,
           paths: [
             {
               value: "/some_topic/location.pose.velocity",
@@ -599,8 +599,6 @@ export function WithJustMinYValueLessThanMinimumValue(): JSX.Element {
             },
           ],
           minYValue: "1",
-          maxYValue: "",
-          showLegend: true,
         }}
       />
     </PanelSetup>
@@ -619,7 +617,7 @@ export function WithJustMinYValueMoreThanMinimumValue(): JSX.Element {
     <PanelSetup fixture={fixture} pauseFrame={pauseFrame}>
       <Plot
         overrideConfig={{
-          xAxisVal: "timestamp",
+          ...exampleConfig,
           paths: [
             {
               value: "/some_topic/location.pose.velocity",
@@ -628,8 +626,6 @@ export function WithJustMinYValueMoreThanMinimumValue(): JSX.Element {
             },
           ],
           minYValue: "1.4",
-          maxYValue: "",
-          showLegend: true,
         }}
       />
     </PanelSetup>
@@ -648,7 +644,7 @@ export function WithJustMinYValueMoreThanMaximumValue(): JSX.Element {
     <PanelSetup fixture={fixture} pauseFrame={pauseFrame}>
       <Plot
         overrideConfig={{
-          xAxisVal: "timestamp",
+          ...exampleConfig,
           paths: [
             {
               value: "/some_topic/location.pose.velocity",
@@ -657,8 +653,6 @@ export function WithJustMinYValueMoreThanMaximumValue(): JSX.Element {
             },
           ],
           minYValue: "5",
-          maxYValue: "",
-          showLegend: true,
         }}
       />
     </PanelSetup>
@@ -677,7 +671,7 @@ export function WithJustMaxYValueLessThanMaximumValue(): JSX.Element {
     <PanelSetup fixture={fixture} pauseFrame={pauseFrame}>
       <Plot
         overrideConfig={{
-          xAxisVal: "timestamp",
+          ...exampleConfig,
           paths: [
             {
               value: "/some_topic/location.pose.velocity",
@@ -685,9 +679,7 @@ export function WithJustMaxYValueLessThanMaximumValue(): JSX.Element {
               timestampMethod: "receiveTime",
             },
           ],
-          minYValue: "",
           maxYValue: "1.8",
-          showLegend: true,
         }}
       />
     </PanelSetup>
@@ -706,7 +698,7 @@ export function WithJustMaxYValueMoreThanMaximumValue(): JSX.Element {
     <PanelSetup fixture={fixture} pauseFrame={pauseFrame}>
       <Plot
         overrideConfig={{
-          xAxisVal: "timestamp",
+          ...exampleConfig,
           paths: [
             {
               value: "/some_topic/location.pose.velocity",
@@ -714,9 +706,7 @@ export function WithJustMaxYValueMoreThanMaximumValue(): JSX.Element {
               timestampMethod: "receiveTime",
             },
           ],
-          minYValue: "",
           maxYValue: "2.8",
-          showLegend: true,
         }}
       />
     </PanelSetup>
@@ -735,7 +725,7 @@ export function WithJustMaxYValueLessThanMinimumValue(): JSX.Element {
     <PanelSetup fixture={fixture} pauseFrame={pauseFrame}>
       <Plot
         overrideConfig={{
-          xAxisVal: "timestamp",
+          ...exampleConfig,
           paths: [
             {
               value: "/some_topic/location.pose.velocity",
@@ -743,9 +733,7 @@ export function WithJustMaxYValueLessThanMinimumValue(): JSX.Element {
               timestampMethod: "receiveTime",
             },
           ],
-          minYValue: "",
           maxYValue: "1",
-          showLegend: true,
         }}
       />
     </PanelSetup>

@@ -109,9 +109,12 @@ export default class RosbridgePlayer implements Player {
     this._open();
   }
 
-  _open = (): void => {
+  private _open = (): void => {
     if (this._closed) {
       return;
+    }
+    if (this._rosClient != undefined) {
+      throw new Error(`Attempted to open a second Rosbridge connection`);
     }
     this._problems.removeProblem("rosbridge:connection-failed");
     log.info(`Opening connection to ${this._url}`);
@@ -168,7 +171,7 @@ export default class RosbridgePlayer implements Player {
     });
   };
 
-  _requestTopics = async (): Promise<void> => {
+  private _requestTopics = async (): Promise<void> => {
     // clear problems before each topics request so we don't have stale problems from previous failed requests
     this._problems.removeProblems((id) => id.startsWith("requestTopics:"));
 
@@ -291,7 +294,7 @@ export default class RosbridgePlayer implements Player {
 
   // Potentially performance-sensitive; await can be expensive
   // eslint-disable-next-line @typescript-eslint/promise-function-async
-  _emitState = debouncePromise(() => {
+  private _emitState = debouncePromise(() => {
     if (!this._listener || this._closed) {
       return Promise.resolve();
     }

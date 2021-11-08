@@ -7,11 +7,12 @@ import { createContext } from "react";
 import { LayoutID } from "@foxglove/studio-base/services/ILayoutStorage";
 
 type ILayoutStorageDebugging = {
-  openFakeStorageDirectory?: () => Promise<void>;
   syncNow: () => Promise<void>;
-  injectEdit?: (id: LayoutID) => Promise<void>;
-  injectRename?: (id: LayoutID) => Promise<void>;
-  injectDelete?: (id: LayoutID) => Promise<void>;
+  // eslint-disable-next-line @foxglove/no-boolean-parameters
+  setOnline: (online: boolean) => void;
+  injectEdit: (id: LayoutID) => Promise<void>;
+  injectRename: (id: LayoutID) => Promise<void>;
+  injectDelete: (id: LayoutID) => Promise<void>;
 };
 
 export default createContext<ILayoutStorageDebugging | undefined>(undefined);

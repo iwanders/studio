@@ -11,19 +11,18 @@
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
 
+import { makeStyles } from "@fluentui/react";
 import cx from "classnames";
+import { Fzf, FzfResultItem } from "fzf";
 import { maxBy } from "lodash";
-import React, { CSSProperties, PureComponent, RefObject } from "react";
+import React, { CSSProperties, PureComponent, RefObject, useCallback } from "react";
 import ReactAutocomplete from "react-autocomplete";
 import { createPortal } from "react-dom";
 import textMetrics from "text-metrics";
 
-import { SANS_SERIF } from "@foxglove/studio-base/styles/fonts";
-import fuzzyFilter from "@foxglove/studio-base/util/fuzzyFilter";
+import { colors, fonts } from "@foxglove/studio-base/util/sharedStyleConstants";
 
-import styles from "./Autocomplete.module.scss";
-
-const fontFamily = SANS_SERIF;
+const fontFamily = fonts.SANS_SERIF;
 const fontSize = "12px";
 let textMeasure: textMetrics.TextMeasure;
 function measureText(text: string): number {
@@ -33,7 +32,65 @@ function measureText(text: string): number {
   return textMeasure.width(text) + 3;
 }
 
-const rowHeight = parseInt(styles.rowHeight ?? "24");
+const ROW_HEIGHT = 24;
+const MAX_ITEMS = 200;
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    borderRadius: 3,
+    borderTopLeftRadius: 0,
+    boxShadow: theme.effects.elevation16,
+    position: "fixed",
+    overflow: "auto",
+    background: theme.semanticColors.menuBackground,
+    zIndex: 1,
+    marginLeft: -6,
+  },
+  input: {
+    background: "transparent !important",
+    borderRadius: 0,
+    border: "none",
+    color: theme.semanticColors.inputText,
+    flexGrow: 1,
+    fontSize: "1rem",
+    margin: 0,
+    padding: 0,
+    textAlign: "left",
+    fontFamily: fonts.SANS_SERIF,
+
+    "&.disabled, &[disabled]": {
+      color: theme.semanticColors.disabledText,
+      backgroundColor: theme.semanticColors.disabledBackground,
+    },
+    "&:focus": {
+      outline: "none",
+    },
+    "&::placeholder": {
+      color: theme.semanticColors.inputPlaceholderText,
+    },
+  },
+  inputError: {
+    color: `${theme.semanticColors.errorIcon} !important`,
+  },
+  inputPlaceholder: {
+    color: theme.semanticColors.inputPlaceholderText,
+  },
+  item: {
+    padding: 6,
+    cursor: "pointer",
+    minHeight: ROW_HEIGHT,
+    lineHeight: ROW_HEIGHT - 10,
+    overflowWrap: "break-word",
+    color: theme.semanticColors.menuItemText,
+    whiteSpace: "pre",
+  },
+  itemSelected: {
+    backgroundColor: theme.semanticColors.menuItemBackgroundHovered,
+  },
+  itemHighlighted: {
+    backgroundColor: theme.semanticColors.menuItemBackgroundHovered,
+  },
+}));
 
 // <Autocomplete> is a Studio-specific autocomplete with support for things like multiple
 // autocompletes that seamlessly transition into each other, e.g. when building more complex
@@ -51,6 +108,7 @@ const rowHeight = parseInt(styles.rowHeight ?? "24");
 // of a "false" focus event. (In our case we just don't bother with ignoring the `focus` event since
 // it doesn't cause any problems.)
 type AutocompleteProps<T = unknown> = {
+  classes: ReturnType<typeof useStyles>;
   items: T[];
   getItemValue: (arg0: T) => string;
   getItemText: (arg0: T) => string;
@@ -58,7 +116,7 @@ type AutocompleteProps<T = unknown> = {
   value?: string;
   selectedItem?: T;
   onChange?: (event: React.SyntheticEvent<HTMLInputElement>, text: string) => void;
-  onSelect: (text: string, item: T, autocomplete: Autocomplete<T>) => void;
+  onSelect: (text: string, item: T, autocomplete: AutocompleteImpl<T>) => void;
   onBlur?: () => void;
   hasError?: boolean;
   autocompleteKey?: string;
@@ -83,7 +141,7 @@ function defaultGetText(name: string) {
     if (typeof item === "string") {
       return item;
     } else if (
-      item &&
+      item != undefined &&
       typeof item === "object" &&
       typeof (item as { value?: string }).value === "string"
     ) {
@@ -93,13 +151,49 @@ function defaultGetText(name: string) {
   };
 }
 
-export default class Autocomplete<T = unknown> extends PureComponent<
-  AutocompleteProps<T>,
-  AutocompleteState
-> {
-  _autocomplete: RefObject<ReactAutocomplete>;
-  _ignoreFocus: boolean = false;
-  _ignoreBlur: boolean = false;
+const EMPTY_SET = new Set<number>();
+
+function itemToFzfResult<T>(item: T): FzfResultItem<T> {
+  return {
+    item,
+    score: 0,
+    positions: EMPTY_SET,
+    start: 0,
+    end: 0,
+  };
+}
+
+const HighlightChars = (props: { str: string; indices: Set<number> }) => {
+  const chars = props.str.split("");
+
+  const nodes = chars.map((char, i) => {
+    if (props.indices.has(i)) {
+      return (
+        <b key={i} style={{ color: colors.HIGHLIGHT }}>
+          {char}
+        </b>
+      );
+    } else {
+      return char;
+    }
+  });
+
+  return <>{nodes}</>;
+};
+
+export interface IAutocomplete {
+  setSelectionRange(selectionStart: number, selectionEnd: number): void;
+  focus(): void;
+  blur(): void;
+}
+
+class AutocompleteImpl<T = unknown>
+  extends PureComponent<AutocompleteProps<T>, AutocompleteState>
+  implements IAutocomplete
+{
+  private _autocomplete: RefObject<ReactAutocomplete>;
+  private _ignoreFocus: boolean = false;
+  private _ignoreBlur: boolean = false;
 
   static defaultProps = {
     getItemText: defaultGetText("getItemText"),
@@ -155,7 +249,7 @@ export default class Autocomplete<T = unknown> extends PureComponent<
     }
   }
 
-  _onFocus = (): void => {
+  private _onFocus = (): void => {
     if (this._ignoreFocus) {
       return;
     }
@@ -174,7 +268,7 @@ export default class Autocomplete<T = unknown> extends PureComponent<
   // Wait for a mouseup event, and check in the mouseup event if anything was actually selected, or
   // if it just was a click without a drag. In the latter case, select everything. This is very
   // similar to how, say, the browser bar in Chrome behaves.
-  _onMouseDown = (_event: React.MouseEvent<HTMLInputElement>): void => {
+  private _onMouseDown = (_event: React.MouseEvent<HTMLInputElement>): void => {
     if (this.props.disableAutoSelect ?? false) {
       return;
     }
@@ -203,7 +297,7 @@ export default class Autocomplete<T = unknown> extends PureComponent<
     document.addEventListener("mouseup", onMouseUp, true);
   };
 
-  _onBlur = (): void => {
+  private _onBlur = (): void => {
     if (this._ignoreBlur) {
       return;
     }
@@ -220,7 +314,7 @@ export default class Autocomplete<T = unknown> extends PureComponent<
     }
   };
 
-  _onChange = (event: React.SyntheticEvent<HTMLInputElement>): void => {
+  private _onChange = (event: React.SyntheticEvent<HTMLInputElement>): void => {
     if (this.props.onChange) {
       this.props.onChange(event, (event.target as HTMLInputElement).value);
     } else {
@@ -231,18 +325,18 @@ export default class Autocomplete<T = unknown> extends PureComponent<
   // Make sure the input field gets focused again after selecting, in case we're doing multiple
   // autocompletes. We pass in `this` to `onSelect` in case the user of this component wants to call
   // `blur()`.
-  _onSelect = (value: string, item: T): void => {
+  private _onSelect = (value: string, item: FzfResultItem<T>): void => {
     if (this._autocomplete.current?.refs.input) {
       (this._autocomplete.current.refs.input as HTMLInputElement).focus();
       this.setState({ focused: true, value: undefined }, () => {
-        this.props.onSelect(value, item, this);
+        this.props.onSelect(value, item.item, this);
       });
     }
   };
 
   // When scrolling down by even a little bit, just show all items. In most cases people won't
   // do this and instead will type more text to narrow down their autocomplete.
-  _onScroll = (event: React.MouseEvent<HTMLDivElement>): void => {
+  private _onScroll = (event: React.MouseEvent<HTMLDivElement>): void => {
     if (event.currentTarget.scrollTop > 0) {
       // Never set `showAllItems` to false here, as `<ReactAutocomplete>` may have a reference to
       // the highlighted element. We only set it back to false in `componentDidUpdate`.
@@ -250,7 +344,7 @@ export default class Autocomplete<T = unknown> extends PureComponent<
     }
   };
 
-  _onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+  private _onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
     if (event.key === "Escape" || (event.key === "Enter" && this.props.items.length === 0)) {
       this.blur();
     }
@@ -258,6 +352,7 @@ export default class Autocomplete<T = unknown> extends PureComponent<
 
   override render(): JSX.Element {
     const {
+      classes,
       autocompleteKey,
       autoSize = false,
       getItemValue,
@@ -272,7 +367,14 @@ export default class Autocomplete<T = unknown> extends PureComponent<
       menuStyle = {},
       inputStyle = {},
     } = this.props;
-    const autocompleteItems = fuzzyFilter(items, filterText, getItemText, sortWhenFiltering);
+    const autocompleteItems: FzfResultItem<T>[] = filterText
+      ? new Fzf(items, {
+          fuzzy: filterText.length > 2 ? "v2" : false,
+          sort: sortWhenFiltering,
+          limit: MAX_ITEMS,
+          selector: getItemText as (_: unknown) => string, // Fzf selector TS type seems to be wrong?
+        }).find(filterText)
+      : items.map((item) => itemToFzfResult(item));
 
     const { hasError = autocompleteItems.length === 0 && value?.length } = this.props;
 
@@ -286,21 +388,21 @@ export default class Autocomplete<T = unknown> extends PureComponent<
       <ReactAutocomplete
         open={open}
         items={autocompleteItems}
-        getItemValue={getItemValue}
-        renderItem={(item, isHighlighted) => {
-          const itemValue = getItemValue(item);
+        getItemValue={(item: FzfResultItem<T>) => getItemValue(item.item)}
+        renderItem={(item: FzfResultItem<T>, isHighlighted) => {
+          const itemValue = getItemValue(item.item);
           return (
             <div
               key={itemValue}
               data-highlighted={isHighlighted}
               data-test-auto-item
-              className={cx(styles.autocompleteItem, {
-                [styles.highlighted!]: isHighlighted,
-                [styles.selected!]:
+              className={cx(classes.item, {
+                [classes.itemHighlighted]: isHighlighted,
+                [classes.itemSelected]:
                   selectedItemValue != undefined && itemValue === selectedItemValue,
               })}
             >
-              {getItemText(item)}
+              <HighlightChars str={getItemText(item.item)} indices={item.positions} />
             </div>
           );
         }}
@@ -308,9 +410,9 @@ export default class Autocomplete<T = unknown> extends PureComponent<
         onSelect={this._onSelect}
         value={value ?? ""}
         inputProps={{
-          className: cx(styles.input, {
-            [styles.inputError!]: hasError,
-            [styles.placeholder!]: value == undefined || value.length === 0,
+          className: cx(classes.input, {
+            [classes.inputError]: hasError,
+            [classes.inputPlaceholder]: value == undefined || value.length === 0,
           }),
           autoCorrect: "off",
           autoCapitalize: "off",
@@ -336,7 +438,7 @@ export default class Autocomplete<T = unknown> extends PureComponent<
           // Hacky virtualization. Either don't show all menuItems (typical when the user is still
           // typing in the autcomplete), or do show them all (once the user scrolls). Not the most
           // sophisticated, but good enough!
-          const maxNumberOfItems = Math.ceil(window.innerHeight / rowHeight + 10);
+          const maxNumberOfItems = Math.ceil(window.innerHeight / ROW_HEIGHT + 10);
           const menuItemsToShow =
             this.state.showAllItems || menuItems.length <= maxNumberOfItems * 2
               ? menuItems
@@ -344,13 +446,14 @@ export default class Autocomplete<T = unknown> extends PureComponent<
 
           // The longest string might not be the widest (e.g. "|||" vs "www"), but this is
           // quite a bit faster, so we throw in a nice padding and call it good enough! :-)
-          const longestItem = maxBy(autocompleteItems, (item) => getItemText(item).length);
-          const width = 50 + (longestItem != undefined ? measureText(getItemText(longestItem)) : 0);
+          const longestItem = maxBy(autocompleteItems, (item) => getItemText(item.item).length);
+          const width =
+            50 + (longestItem != undefined ? measureText(getItemText(longestItem.item)) : 0);
           const maxHeight = `calc(100vh - 10px - ${style.top}px)`;
 
           return (
             <div
-              className={styles.root}
+              className={classes.root}
               key={
                 autocompleteKey
                 /* So we scroll to the top when selecting */
@@ -390,3 +493,24 @@ export default class Autocomplete<T = unknown> extends PureComponent<
     );
   }
 }
+
+export default React.forwardRef((props, ref) => {
+  const classes = useStyles();
+  const mapRef = useCallback(
+    (autocomplete: IAutocomplete | ReactNull) => {
+      if (typeof ref === "function") {
+        ref(autocomplete);
+      } else if (ref != undefined) {
+        ref.current = autocomplete;
+      }
+    },
+    [ref],
+  );
+  return <AutocompleteImpl {...props} ref={mapRef} classes={classes} />;
+}) as <T>(
+  props: JSX.LibraryManagedAttributes<
+    typeof AutocompleteImpl,
+    Omit<AutocompleteProps<T>, "classes">
+  > &
+    React.RefAttributes<IAutocomplete>,
+) => React.ReactElement;

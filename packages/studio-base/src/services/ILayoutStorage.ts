@@ -9,10 +9,18 @@ import { PanelsState } from "@foxglove/studio-base/context/CurrentLayoutContext/
 export type LayoutID = string & { __brand: "LayoutID" };
 export type ISO8601Timestamp = string & { __brand: "ISO8601Timestamp" };
 
+export type LayoutPermission = "CREATOR_WRITE" | "ORG_READ" | "ORG_WRITE";
+
+export type LayoutSyncStatus =
+  | "new"
+  | "updated"
+  | "tracked"
+  | "locally-deleted"
+  | "remotely-deleted";
 export type Layout = {
   id: LayoutID;
   name: string;
-  permission: "creator_write" | "org_read" | "org_write";
+  permission: LayoutPermission;
 
   /** @deprecated old field name, migrated to working/baseline */
   data?: PanelsState;
@@ -22,7 +30,7 @@ export type Layout = {
   /** The last explicitly saved version of this layout. */
   baseline: {
     data: PanelsState;
-    updatedAt: ISO8601Timestamp;
+    savedAt: ISO8601Timestamp | undefined;
   };
 
   /**
@@ -31,7 +39,16 @@ export type Layout = {
   working:
     | {
         data: PanelsState;
-        updatedAt: ISO8601Timestamp;
+        savedAt: ISO8601Timestamp | undefined;
+      }
+    | undefined;
+
+  /** Info about this layout from remote storage. */
+  syncInfo:
+    | {
+        status: LayoutSyncStatus;
+        /** The last savedAt time returned by the server. */
+        lastRemoteSavedAt: ISO8601Timestamp | undefined;
       }
     | undefined;
 };
@@ -46,7 +63,31 @@ export interface ILayoutStorage {
    * If applicable, the layout manager will call this method to migrate any old existing local
    * layouts into the new namespace used for local layouts.
    */
-  migrateLocalLayouts?(namespace: string): Promise<void>;
+  migrateUnnamespacedLayouts?(namespace: string): Promise<void>;
+
+  /**
+   * The layout manager will call this method to convert any local layouts to personal layouts when logging in.
+   */
+  importLayouts(params: { fromNamespace: string; toNamespace: string }): Promise<void>;
+}
+
+export function layoutPermissionIsShared(
+  permission: LayoutPermission,
+): permission is Exclude<LayoutPermission, "CREATOR_WRITE"> {
+  return permission !== "CREATOR_WRITE";
+}
+
+export function layoutIsShared(
+  layout: Layout,
+): layout is Layout & { permission: Exclude<LayoutPermission, "CREATOR_WRITE"> } {
+  return layoutPermissionIsShared(layout.permission);
+}
+
+export function layoutAppearsDeleted(layout: Layout): boolean {
+  return (
+    layout.syncInfo?.status === "locally-deleted" ||
+    (layout.syncInfo?.status === "remotely-deleted" && layout.working == undefined)
+  );
 }
 
 /**
@@ -71,19 +112,29 @@ export function migrateLayout(value: unknown): Layout {
     if (layout.working) {
       baseline = layout.working;
     } else if (layout.data) {
-      baseline = { data: layout.data, updatedAt: now };
+      baseline = { data: layout.data, savedAt: now };
     } else if (layout.state) {
-      baseline = { data: layout.state, updatedAt: now };
+      baseline = { data: layout.state, savedAt: now };
     } else {
       throw new Error("Invariant violation - layout item is missing data");
     }
   }
 
+  function migrateData(data: PanelsState): PanelsState {
+    const result = { ...data, configById: data.configById ?? data.savedProps ?? {} };
+    delete result.savedProps;
+    return result;
+  }
+
   return {
     id: layout.id,
     name: layout.name ?? `Unnamed (${now})`,
-    permission: layout.permission ?? "creator_write",
-    working: layout.working,
-    baseline,
+    permission:
+      (layout.permission?.toUpperCase() as LayoutPermission | undefined) ?? "CREATOR_WRITE",
+    working: layout.working
+      ? { ...layout.working, data: migrateData(layout.working.data) }
+      : undefined,
+    baseline: { ...baseline, data: migrateData(baseline.data) },
+    syncInfo: layout.syncInfo,
   };
 }

@@ -15,7 +15,7 @@ import { storiesOf } from "@storybook/react";
 
 import HelpModal from "@foxglove/studio-base/components/HelpModal";
 
-const stories = storiesOf("Help pages", module);
+const stories = storiesOf("Help pages", module).addParameters({ colorScheme: "dark" });
 
 export function makeHelpPageStories(req: ReturnType<typeof require.context>): void {
   const helpData = req.keys().map((name: any) => ({ name, data: req(name) }));
@@ -23,7 +23,7 @@ export function makeHelpPageStories(req: ReturnType<typeof require.context>): vo
   helpData.forEach(({ name, data }: any) => {
     stories.add(name, () => (
       <HelpModal onRequestClose={() => {}}>
-        {data.default ? React.createElement(data.default) : data}
+        {data.default != undefined ? React.createElement(data.default) : data}
       </HelpModal>
     ));
   });

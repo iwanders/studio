@@ -2,15 +2,33 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import ConsoleLineIcon from "@mdi/svg/svg/console-line.svg";
+import { mergeStyleSets } from "@fluentui/react";
+import ClipboardOutlineIcon from "@mdi/svg/svg/clipboard-outline.svg";
 
 import Icon from "@foxglove/studio-base/components/Icon";
-import { PanelConfig } from "@foxglove/studio-base/types/panels";
+import { OpenSiblingPanel } from "@foxglove/studio-base/types/panels";
+import clipboard from "@foxglove/studio-base/util/clipboard";
 
 import HighlightedValue from "./HighlightedValue";
 import RawMessagesIcons from "./RawMessagesIcons";
+import { copyMessageReplacer } from "./copyMessageReplacer";
 import { ValueAction } from "./getValueActionForValue";
-import styles from "./index.module.scss";
+
+const classes = mergeStyleSets({
+  icon: {
+    "> svg": {
+      verticalAlign: "top !important",
+    },
+  },
+  iconBox: {
+    display: "inline-block",
+    whiteSpace: "nowrap",
+    width: "0px",
+    height: "0px",
+    position: "relative",
+    left: "6px",
+  },
+});
 
 export default function Value({
   arrLabel,
@@ -27,7 +45,7 @@ export default function Value({
   itemValue: unknown;
   valueAction: ValueAction | undefined;
   onTopicPathChange: (arg0: string) => void;
-  openSiblingPanel: (type: string, cb: (config: PanelConfig) => PanelConfig) => void;
+  openSiblingPanel: OpenSiblingPanel;
 }): JSX.Element {
   return (
     <span>
@@ -37,16 +55,17 @@ export default function Value({
           {arrLabel}
           <Icon
             fade
-            className={styles.icon ?? ""}
-            // eslint-disable-next-line no-restricted-syntax
-            onClick={() => console.log(itemValue)}
-            tooltip="Log data to browser console"
+            className={classes.icon}
+            onClick={() => {
+              void clipboard.copy(JSON.stringify(itemValue, copyMessageReplacer, 2) ?? "");
+            }}
+            tooltip="Copy"
           >
-            <ConsoleLineIcon />
+            <ClipboardOutlineIcon />
           </Icon>
         </>
       )}
-      <span className={styles.iconBox ?? ""}>
+      <span className={classes.iconBox}>
         {valueAction != undefined ? (
           <RawMessagesIcons
             valueAction={valueAction}

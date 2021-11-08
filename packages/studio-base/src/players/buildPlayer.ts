@@ -10,7 +10,6 @@ import {
   getRemoteBagDescriptor,
 } from "@foxglove/studio-base/randomAccessDataProviders/standardDataProviderDescriptors";
 import { RandomAccessDataProviderDescriptor } from "@foxglove/studio-base/randomAccessDataProviders/types";
-import { SECOND_SOURCE_PREFIX } from "@foxglove/studio-base/util/globalConstants";
 import { getSeekToTime } from "@foxglove/studio-base/util/time";
 
 export type BuildPlayerOptions = {
@@ -23,8 +22,9 @@ export function buildPlayerFromDescriptor(
   childDescriptor: RandomAccessDataProviderDescriptor,
   options: BuildPlayerOptions,
 ): Player {
-  const rootDescriptor = {
+  const rootDescriptor: RandomAccessDataProviderDescriptor = {
     label: name,
+    filePath: childDescriptor.filePath,
     name: CoreDataProviders.ParseMessagesDataProvider,
     args: {},
     children: [
@@ -46,23 +46,6 @@ export function buildPlayerFromFiles(files: File[], options: BuildPlayerOptions)
   const name = files.map((file) => String(file.name)).join(", ");
   if (files.length === 1) {
     return buildPlayerFromDescriptor(name, getLocalBagDescriptor(files[0] as File), options);
-  } else if (files.length === 2) {
-    return buildPlayerFromDescriptor(
-      name,
-      {
-        name: CoreDataProviders.CombinedDataProvider,
-        args: {},
-        children: [
-          getLocalBagDescriptor(files[0] as File),
-          {
-            name: CoreDataProviders.RenameDataProvider,
-            args: { prefix: SECOND_SOURCE_PREFIX },
-            children: [getLocalBagDescriptor(files[1] as File)],
-          },
-        ],
-      },
-      options,
-    );
   }
   throw new Error(`Unsupported number of files: ${files.length}`);
 }
@@ -76,23 +59,7 @@ export function buildPlayerFromBagURLs(urls: string[], options: BuildPlayerOptio
       getRemoteBagDescriptor(urls[0] as string, options),
       options,
     );
-  } else if (urls.length === 2) {
-    return buildPlayerFromDescriptor(
-      name,
-      {
-        name: CoreDataProviders.CombinedDataProvider,
-        args: {},
-        children: [
-          getRemoteBagDescriptor(urls[0] as string, options),
-          {
-            name: CoreDataProviders.RenameDataProvider,
-            args: { prefix: SECOND_SOURCE_PREFIX },
-            children: [getRemoteBagDescriptor(urls[1] as string, options)],
-          },
-        ],
-      },
-      options,
-    );
   }
+
   throw new Error(`Unsupported number of urls: ${urls.length}`);
 }

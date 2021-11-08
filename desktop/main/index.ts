@@ -11,6 +11,7 @@ import { autoUpdater } from "electron-updater";
 import fs from "fs";
 
 import Logger from "@foxglove/log";
+import { AppSetting } from "@foxglove/studio-base/src/AppSetting";
 
 import pkgInfo from "../../package.json";
 import StudioWindow from "./StudioWindow";
@@ -22,6 +23,7 @@ import {
   registerRosPackageProtocolHandlers,
   registerRosPackageProtocolSchemes,
 } from "./rosPackageResources";
+import { getAppSetting } from "./settings";
 import { getTelemetrySettings } from "./telemetry";
 
 const log = Logger.getLogger(__filename);
@@ -52,6 +54,12 @@ function isNetworkError(err: Error) {
   );
 }
 
+function updateNativeColorScheme() {
+  const colorScheme = getAppSetting<string>(AppSetting.COLOR_SCHEME) ?? "dark";
+  nativeTheme.themeSource =
+    colorScheme === "dark" ? "dark" : colorScheme === "light" ? "light" : "system";
+}
+
 function main() {
   const start = Date.now();
   log.info(`${pkgInfo.productName} ${pkgInfo.version}`);
@@ -70,7 +78,8 @@ function main() {
   process.env["ELECTRON_DISABLE_SECURITY_WARNINGS"] = isProduction ? "false" : "true";
 
   // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-  if (require("electron-squirrel-startup")) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  if (require("electron-squirrel-startup") as boolean) {
     app.quit();
     return;
   }
@@ -105,8 +114,8 @@ function main() {
   });
 
   // Load opt-out settings for crash reporting and telemetry
-  const [allowCrashReporting] = getTelemetrySettings();
-  if (allowCrashReporting && typeof process.env.SENTRY_DSN === "string") {
+  const { crashReportingEnabled } = getTelemetrySettings();
+  if (crashReportingEnabled && typeof process.env.SENTRY_DSN === "string") {
     log.info("initializing Sentry in main");
     initSentry({
       dsn: process.env.SENTRY_DSN,
@@ -162,6 +171,11 @@ function main() {
     preloaderFileInputIsReady = true;
   });
 
+  ipcMain.handle("setRepresentedFilename", (ev, path: string | undefined) => {
+    const browserWindow = BrowserWindow.fromId(ev.sender.id);
+    browserWindow?.setRepresentedFilename(path ?? "");
+  });
+
   const openUrls: string[] = [];
 
   // works on osx - even when app is closed
@@ -174,7 +188,10 @@ function main() {
 
     ev.preventDefault();
 
-    if (app.isReady()) {
+    if (url.startsWith("foxglove://signin-complete")) {
+      // When completing sign in from Console, the browser can launch this URL to re-focus the app.
+      app.focus({ steal: true });
+    } else if (app.isReady()) {
       new StudioWindow([url]).load();
     } else {
       openUrls.push(url);
@@ -188,12 +205,15 @@ function main() {
   // Must be called before app.ready event
   registerRosPackageProtocolSchemes();
 
+  ipcMain.handle("updateNativeColorScheme", () => {
+    updateNativeColorScheme();
+  });
+
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
   app.on("ready", async () => {
-    nativeTheme.themeSource = "dark";
-
+    updateNativeColorScheme();
     const argv = process.argv;
     const deepLinks = argv.filter((arg) => arg.startsWith("foxglove://"));
 

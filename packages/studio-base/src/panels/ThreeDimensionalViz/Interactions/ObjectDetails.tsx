@@ -14,15 +14,15 @@
 import { first, omit, sortBy } from "lodash";
 import { useCallback } from "react";
 import Tree from "react-json-tree";
-import { MouseEventObject } from "regl-worldview";
 import styled from "styled-components";
 
+import { MouseEventObject } from "@foxglove/regl-worldview";
 import Dropdown from "@foxglove/studio-base/components/Dropdown";
 import DropdownItem from "@foxglove/studio-base/components/Dropdown/DropdownItem";
 import useGetItemStringWithTimezone from "@foxglove/studio-base/components/JsonTree/useGetItemStringWithTimezone";
-import styles from "@foxglove/studio-base/panels/ThreeDimensionalViz/Layout.module.scss";
+import styles from "@foxglove/studio-base/panels/ThreeDimensionalViz/sharedStyles";
 import { getInstanceObj } from "@foxglove/studio-base/panels/ThreeDimensionalViz/threeDimensionalVizUtils";
-import { jsonTreeTheme } from "@foxglove/studio-base/util/globalConstants";
+import { useJsonTreeTheme } from "@foxglove/studio-base/util/globalConstants";
 
 import GlobalVariableLink from "./GlobalVariableLink/index";
 import { InteractionData } from "./types";
@@ -64,14 +64,15 @@ export default function ObjectDetails({
     full: "Show full object",
   };
 
+  // eslint-disable-next-line @foxglove/no-boolean-parameters
   const updateShowInstance = useCallback((shouldShowInstance: boolean) => {
     setShowInstance(shouldShowInstance);
   }, []);
 
-  const objectToDisplay = instanceObject && showInstance ? instanceObject : object;
+  const objectToDisplay = instanceObject != undefined && showInstance ? instanceObject : object;
   return (
     <div>
-      {instanceObject && (
+      {instanceObject != undefined && (
         <Dropdown
           btnClassname={styles.button}
           position="below"
@@ -93,13 +94,14 @@ export default function ObjectDetails({
 }
 
 function maybePlainObject(rawVal: unknown) {
-  if (rawVal && typeof rawVal === "object" && "toJSON" in rawVal) {
+  if (typeof rawVal === "object" && rawVal && "toJSON" in rawVal) {
     return (rawVal as { toJSON: () => unknown }).toJSON();
   }
   return rawVal;
 }
 
 function ObjectDetailsInner({ interactionData, objectToDisplay }: Props) {
+  const jsonTreeTheme = useJsonTreeTheme();
   const topic = interactionData?.topic ?? "";
 
   // object to display may not be a plain-ole-data

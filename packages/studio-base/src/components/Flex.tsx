@@ -11,10 +11,59 @@
 //   found at http://www.apache.org/licenses/LICENSE-2.0
 //   You may not use this file except in compliance with the License.
 
+import { makeStyles } from "@fluentui/react";
 import cx from "classnames";
 import { CSSProperties, MouseEventHandler } from "react";
 
-import styles from "./Flex.module.scss";
+const useStyles = makeStyles((theme) => ({
+  flex: {
+    display: "flex",
+    flexDirection: "row",
+    flex: "1 1 auto",
+
+    "&::-webkit-scrollbar": {
+      width: 4,
+      height: 4,
+    },
+    "&::-webkit-scrollbar-track": {
+      background: "transparent",
+    },
+    "&::-webkit-scrollbar-thumb": {
+      background: theme.palette.blackTranslucent40,
+      borderRadius: 2,
+    },
+  },
+  reverse: {
+    flexDirection: "row-reverse",
+  },
+  // when the theme changes dynamically, the main flex rule above moves later in the
+  // generated style tag (order is not preserved), so we need the specificity to be higher
+  // https://github.com/microsoft/fluentui/issues/20452
+  col: { flexDirection: "column !important" },
+  colReverse: { flexDirection: "column-reverse !important" },
+  clip: {
+    overflow: "hidden",
+  },
+  center: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  start: {
+    alignItems: "start",
+  },
+  end: {
+    alignItems: "flex-end",
+  },
+  wrap: {
+    flexWrap: "wrap",
+  },
+  scroll: {
+    overflowY: "auto",
+  },
+  scrollX: {
+    overflowX: "auto",
+  },
+}));
 
 type Props = {
   // set to true to flex along column instead of row
@@ -46,6 +95,7 @@ type Props = {
 };
 
 const Flex = React.forwardRef((props: Props, ref: React.ForwardedRef<HTMLDivElement>) => {
+  const classes = useStyles();
   const {
     col,
     row,
@@ -70,19 +120,26 @@ const Flex = React.forwardRef((props: Props, ref: React.ForwardedRef<HTMLDivElem
     throw new Error("Flex col and row are mutually exclusive");
   }
 
+  const directionClasses =
+    col === true && reverse === true
+      ? classes.colReverse
+      : col === true
+      ? classes.col
+      : reverse === true
+      ? classes.reverse
+      : undefined;
+
   // toggle conditional classes based on props
   const conditionalClasses = {
-    [styles.col!]: col,
-    [styles.reverse!]: reverse,
-    [styles.center!]: center,
-    [styles.start!]: start,
-    [styles.end!]: end,
-    [styles.wrap!]: wrap,
-    [styles.clip!]: clip,
-    [styles.scroll!]: scroll,
-    [styles.scrollX!]: scrollX,
+    [classes.center]: center,
+    [classes.start]: start,
+    [classes.end]: end,
+    [classes.wrap]: wrap,
+    [classes.clip]: clip,
+    [classes.scroll]: scroll,
+    [classes.scrollX]: scrollX,
   };
-  const combinedClasses = cx(styles.flex, conditionalClasses, className);
+  const combinedClasses = cx(classes.flex, directionClasses, conditionalClasses, className);
 
   return (
     <div

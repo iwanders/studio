@@ -13,32 +13,41 @@
 
 import { ChartOptions, ScaleOptions } from "chart.js";
 import { uniq } from "lodash";
-import { ComponentProps, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useResizeDetector } from "react-resize-detector";
-import stringHash from "string-hash";
 import styled, { css } from "styled-components";
 import tinycolor from "tinycolor2";
 
-import { subtract as subtractTimes, toSec } from "@foxglove/rostime";
+import { useShallowMemo } from "@foxglove/hooks";
+import { add as addTimes, fromSec, subtract as subtractTimes, toSec } from "@foxglove/rostime";
 import * as PanelAPI from "@foxglove/studio-base/PanelAPI";
+import { useBlocksByTopic } from "@foxglove/studio-base/PanelAPI";
 import Button from "@foxglove/studio-base/components/Button";
 import MessagePathInput from "@foxglove/studio-base/components/MessagePathSyntax/MessagePathInput";
+import { getTopicsFromPaths } from "@foxglove/studio-base/components/MessagePathSyntax/parseRosPath";
+import { useDecodeMessagePathsForMessagesByTopic } from "@foxglove/studio-base/components/MessagePathSyntax/useCachedGetMessagePathDataItems";
 import useMessagesByPath from "@foxglove/studio-base/components/MessagePathSyntax/useMessagesByPath";
+import {
+  MessagePipelineContext,
+  useMessagePipeline,
+  useMessagePipelineGetter,
+} from "@foxglove/studio-base/components/MessagePipeline";
 import Panel from "@foxglove/studio-base/components/Panel";
 import PanelToolbar from "@foxglove/studio-base/components/PanelToolbar";
 import TimeBasedChart, {
-  getTooltipItemForMessageHistoryItem,
   TimeBasedChartTooltipData,
 } from "@foxglove/studio-base/components/TimeBasedChart";
-import { MONOSPACE } from "@foxglove/studio-base/styles/fonts";
-import { PanelConfig } from "@foxglove/studio-base/types/panels";
-import { darkColor, lineColors } from "@foxglove/studio-base/util/plotColors";
-import { colors } from "@foxglove/studio-base/util/sharedStyleConstants";
+import {
+  ChartData,
+  OnClickArg as OnChartClickArgs,
+} from "@foxglove/studio-base/src/components/Chart";
+import { OpenSiblingPanel, PanelConfig } from "@foxglove/studio-base/types/panels";
+import { fonts } from "@foxglove/studio-base/util/sharedStyleConstants";
 import { TimestampMethod } from "@foxglove/studio-base/util/time";
-import { grey } from "@foxglove/studio-base/util/toolsColorScheme";
 
 import helpContent from "./index.help.md";
-import positiveModulo from "./positiveModulo";
+import messagesToDatasets from "./messagesToDatasets";
+import { StateTransitionPath } from "./types";
 
 export const transitionableRosTypes = [
   "bool",
@@ -54,7 +63,7 @@ export const transitionableRosTypes = [
   "json",
 ];
 
-const fontFamily = MONOSPACE;
+const fontFamily = fonts.MONOSPACE;
 const fontSize = 10;
 const fontWeight = "bold";
 
@@ -86,8 +95,6 @@ const SChartContainerInner = styled.div`
   margin-top: 10px;
 `;
 
-const inputColor = tinycolor(colors.DARK3).setAlpha(0.7).toHexString();
-const inputColorBright = tinycolor(colors.DARK3).lighten(8).toHexString();
 const inputLeft = 20;
 const SInputContainer = styled.div<{ shrink: boolean }>`
   display: flex;
@@ -102,7 +109,7 @@ const SInputContainer = styled.div<{ shrink: boolean }>`
   line-height: 20px;
 
   &:hover {
-    background: ${inputColor};
+    background: ${({ theme }) => tinycolor(theme.palette.neutralLight).setAlpha(0.5).toRgbString()};
   }
 
   // Move over the first input on hover for the toolbar.
@@ -122,11 +129,12 @@ const SInputDelete = styled.div`
   height: 20px;
   line-height: 20px;
   padding: 0 6px;
-  background: ${inputColor};
+  background: ${({ theme }) => tinycolor(theme.palette.neutralLight).setAlpha(0.5).toRgbString()};
   cursor: pointer;
 
   &:hover {
-    background: ${inputColorBright};
+    background: ${({ theme }) =>
+      tinycolor(theme.palette.neutralLight).setAlpha(0.75).toRgbString()};
   }
 
   ${SInputContainer}:hover & {
@@ -163,23 +171,30 @@ const plugins: ChartOptions["plugins"] = {
   },
 };
 
-export type StateTransitionPath = { value: string; timestampMethod: TimestampMethod };
 export type StateTransitionConfig = { paths: StateTransitionPath[] };
 
 export function openSiblingStateTransitionsPanel(
-  openSiblingPanel: (type: string, cb: (config: PanelConfig) => PanelConfig) => void,
+  openSiblingPanel: OpenSiblingPanel,
   topicName: string,
 ): void {
-  openSiblingPanel("StateTransitions", (config: PanelConfig) => {
-    return {
-      ...config,
-      paths: uniq(
-        (config as StateTransitionConfig).paths.concat([
-          { value: topicName, timestampMethod: "receiveTime" },
-        ]),
-      ),
-    };
+  openSiblingPanel({
+    panelType: "StateTransitions",
+    updateIfExists: true,
+    siblingConfigCreator: (config: PanelConfig) => {
+      return {
+        ...config,
+        paths: uniq(
+          (config as StateTransitionConfig).paths.concat([
+            { value: topicName, timestampMethod: "receiveTime" },
+          ]),
+        ),
+      };
+    },
   });
+}
+
+function selectCurrentTime(ctx: MessagePipelineContext) {
+  return ctx.playerState.activeData?.currentTime;
 }
 
 type Props = {
@@ -215,9 +230,24 @@ const StateTransitions = React.memo(function StateTransitions(props: Props) {
     saveConfig({ paths: newPaths });
   };
 
-  const [defaultStart] = useState({ sec: 0, nsec: 0 });
-  const { startTime = defaultStart } = PanelAPI.useDataSourceInfo();
-  const itemsByPath = useMessagesByPath(useMemo(() => paths.map(({ value }) => value), [paths]));
+  const pathStrings = useMemo(() => paths.map(({ value }) => value), [paths]);
+  const subscribeTopics = useMemo(() => getTopicsFromPaths(pathStrings), [pathStrings]);
+
+  const { startTime } = PanelAPI.useDataSourceInfo();
+  const currentTime = useMessagePipeline(selectCurrentTime);
+  const currentTimeSinceStart = useMemo(
+    () => (!currentTime || !startTime ? undefined : toSec(subtractTimes(currentTime, startTime))),
+    [currentTime, startTime],
+  );
+  const itemsByPath = useMessagesByPath(pathStrings);
+
+  const decodeMessagePathsForMessagesByTopic = useDecodeMessagePathsForMessagesByTopic(pathStrings);
+
+  const blocks = useBlocksByTopic(subscribeTopics);
+  const decodedBlocks = useMemo(
+    () => blocks.map(decodeMessagePathsForMessagesByTopic),
+    [blocks, decodeMessagePathsForMessagesByTopic],
+  );
 
   const { height, heightPerTopic } = useMemo(() => {
     const onlyTopicsHeight = paths.length * 55;
@@ -228,140 +258,69 @@ const StateTransitions = React.memo(function StateTransitions(props: Props) {
     };
   }, [paths.length]);
 
-  const baseColors = useMemo(() => {
-    return [grey, ...lineColors];
-  }, []);
-
   const { datasets, tooltips, minY } = useMemo(() => {
     let outMinY: number | undefined;
 
     const outTooltips: TimeBasedChartTooltipData[] = [];
-    const outDatasets: typeof data["datasets"] = [];
+    const outDatasets: ChartData["datasets"] = [];
 
-    let pathIndex = 0;
-    for (const path of paths) {
-      const { value: pathValue, timestampMethod } = path;
+    // ignore all data when we don't have a start time
+    if (!startTime) {
+      return {
+        datasets: outDatasets,
+        tooltips: outTooltips,
+        minY: outMinY,
+      };
+    }
 
-      let prevQueryValue;
-      let previousTimestamp;
-      let currentData: typeof outDatasets[0]["data"] = [];
-
+    paths.forEach((path, pathIndex) => {
       // y axis values are set based on the path we are rendering
       // negative makes each path render below the previous
       const y = (pathIndex + 1) * 6 * -1;
       outMinY = Math.min(outMinY ?? y, y - 3);
 
-      for (const itemByPath of itemsByPath[pathValue] ?? []) {
-        const item = getTooltipItemForMessageHistoryItem(itemByPath);
-        const timestamp = timestampMethod === "headerStamp" ? item.headerStamp : item.receiveTime;
-        if (!timestamp) {
-          continue;
-        }
+      const blocksForPath = decodedBlocks.map((decodedBlock) => decodedBlock[path.value]);
 
-        const queriedData = item.queriedData[0];
-        if (item.queriedData.length !== 1 || !queriedData) {
-          continue;
-        }
-
-        const { constantName, value } = queriedData;
-
-        // Skip duplicates.
-        if (
-          previousTimestamp &&
-          toSec(subtractTimes(previousTimestamp, timestamp)) === 0 &&
-          prevQueryValue === value
-        ) {
-          continue;
-        }
-        previousTimestamp = timestamp;
-
-        // Skip anything that cannot be cast to a number or is a string.
-        if (Number.isNaN(value) && typeof value !== "string") {
-          continue;
-        }
-
-        if (typeof value !== "number" && typeof value !== "boolean" && typeof value !== "string") {
-          continue;
-        }
-
-        const valueForColor =
-          typeof value === "string" ? stringHash(value) : Math.round(Number(value));
-        const color =
-          baseColors[positiveModulo(valueForColor, Object.values(baseColors).length)] ?? "grey";
-
-        const x = toSec(subtractTimes(timestamp, startTime));
-
-        const element = {
-          x,
-          y,
-        };
-
-        const tooltip: TimeBasedChartTooltipData = {
-          x,
-          y,
-          item,
-          path: pathValue,
-          value,
-          constantName,
+      {
+        const { datasets: newDataSets, tooltips: newTooltips } = messagesToDatasets({
+          path,
           startTime,
-        };
-        outTooltips.unshift(tooltip);
-
-        // the current point is added even if different from previous value to avoid _gaps_ in the data
-        // this is a myproduct of using separate datasets to render each color
-        currentData.push({
-          x,
           y,
+          pathIndex,
+          blocks: blocksForPath,
         });
 
-        // if the value is different from previous value, make a new dataset
-        if (value !== prevQueryValue) {
-          const label =
-            constantName != undefined ? `${constantName} (${String(value)})` : String(value);
-
-          const elementWithLabel = {
-            ...element,
-            label,
-            labelColor: color,
-          };
-
-          // new data starts with our current point, the current point
-          currentData = [elementWithLabel];
-          const dataset: typeof data["datasets"][0] = {
-            borderWidth: 10,
-            borderColor: color,
-            data: currentData,
-            label: pathIndex.toString(),
-            pointBackgroundColor: darkColor(color),
-            pointBorderColor: "transparent",
-            pointHoverRadius: 3,
-            pointRadius: 1.25,
-            pointStyle: "circle",
-            showLine: true,
-            datalabels: {
-              color,
-            },
-          };
-
-          outDatasets.push(dataset);
-        }
-
-        prevQueryValue = value;
+        outDatasets.push(...newDataSets);
+        outTooltips.push(...newTooltips);
       }
 
-      ++pathIndex;
-    }
+      // If we have have messages in blocks for this path, we ignore streamed messages and only
+      // display the messages from blocks.
+      const haveBlocksForPath = blocksForPath.some((item) => item != undefined);
+      if (haveBlocksForPath) {
+        return;
+      }
+
+      const items = itemsByPath[path.value];
+      if (items) {
+        const { datasets: newDataSets, tooltips: newTooltips } = messagesToDatasets({
+          path,
+          startTime,
+          y,
+          pathIndex,
+          blocks: [items],
+        });
+        outDatasets.push(...newDataSets);
+        outTooltips.push(...newTooltips);
+      }
+    });
 
     return {
       datasets: outDatasets,
       tooltips: outTooltips,
       minY: outMinY,
     };
-  }, [baseColors, itemsByPath, paths, startTime]);
-
-  const data: ComponentProps<typeof TimeBasedChart>["data"] = {
-    datasets,
-  };
+  }, [itemsByPath, decodedBlocks, paths, startTime]);
 
   const yScale = useMemo<ScaleOptions>(() => {
     return {
@@ -389,6 +348,22 @@ const StateTransitions = React.memo(function StateTransitions(props: Props) {
     refreshRate: 0,
     refreshMode: "debounce",
   });
+
+  const messagePipeline = useMessagePipelineGetter();
+  const onClick = useCallback(
+    ({ x: seekSeconds }: OnChartClickArgs) => {
+      const { startTime: start } = messagePipeline().playerState.activeData ?? {};
+      const { seekPlayback } = messagePipeline();
+      if (seekSeconds == undefined || start == undefined) {
+        return;
+      }
+      const seekTime = addTimes(start, fromSec(seekSeconds));
+      seekPlayback(seekTime);
+    },
+    [messagePipeline],
+  );
+
+  const data: ChartData = useShallowMemo({ datasets });
 
   return (
     <SRoot>
@@ -418,6 +393,8 @@ const StateTransitions = React.memo(function StateTransitions(props: Props) {
             yAxes={yScale}
             plugins={plugins}
             tooltips={tooltips}
+            onClick={onClick}
+            currentTime={currentTimeSinceStart}
           />
 
           {paths.map(({ value: path, timestampMethod }, index) => (

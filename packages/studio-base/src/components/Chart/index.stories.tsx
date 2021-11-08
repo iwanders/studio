@@ -73,7 +73,7 @@ const props: ComponentProps<typeof ChartComponent> = {
       y: {
         ticks: {
           font: {
-            family: `"Roboto Mono"`,
+            family: `"IBM Plex Mono"`,
             size: 10,
           },
           color: "#eee",
@@ -88,7 +88,7 @@ const props: ComponentProps<typeof ChartComponent> = {
       x: {
         ticks: {
           font: {
-            family: `"Roboto Mono"`,
+            family: `"IBM Plex Mono"`,
             size: 10,
           },
           color: "#eee",
@@ -111,13 +111,14 @@ if (propsWithDatalabels.data.datasets[0]?.datalabels) {
 const divStyle = { width: 600, height: 800, background: "black" };
 
 export default {
-  title: "components/Chart/index",
+  title: "components/Chart",
   component: ChartComponent,
   parameters: {
     chromatic: {
       // additional delay for any final clicks or renders
       delay: 100,
     },
+    colorScheme: "dark",
   },
 };
 
@@ -149,13 +150,13 @@ WithDatalabels.parameters = {
 };
 
 export const AllowsClickingOnDatalabels: Story = (_args) => {
-  const [clickedDatalabel, setClickedDatalabel] = useState<any>(undefined);
+  const [clickedDatalabel, setClickedDatalabel] = useState<unknown>(undefined);
   const readySignal = useReadySignal();
 
   const doClick = useCallback(() => {
-    if (!clickedDatalabel) {
+    if (clickedDatalabel == undefined) {
       const [canvas] = document.getElementsByTagName("canvas");
-      TestUtils.Simulate.click(canvas!, { clientX: 245, clientY: 419 });
+      TestUtils.Simulate.click(canvas!, { clientX: 245, clientY: 429 });
     }
   }, [clickedDatalabel]);
 
@@ -164,7 +165,7 @@ export const AllowsClickingOnDatalabels: Story = (_args) => {
   }, []);
 
   useEffect(() => {
-    if (clickedDatalabel) {
+    if (clickedDatalabel != undefined) {
       readySignal();
     }
   }, [clickedDatalabel, readySignal]);
@@ -172,8 +173,10 @@ export const AllowsClickingOnDatalabels: Story = (_args) => {
   return (
     <div style={divStyle}>
       <div style={{ padding: 6, fontSize: 16 }}>
-        {clickedDatalabel
-          ? `Clicked datalabel with selection id: ${String(clickedDatalabel.selectionObj)}`
+        {clickedDatalabel != undefined
+          ? `Clicked datalabel with selection id: ${String(
+              (clickedDatalabel as Record<string, unknown>).selectionObj,
+            )}`
           : "Have not clicked datalabel"}
       </div>
       <ChartComponent {...propsWithDatalabels} onChartUpdate={doClick} onClick={onClick} />

@@ -20,6 +20,11 @@ export default {
 
 export const SignedIn = (): JSX.Element => {
   const me = {
+    id: "fake-userid",
+    orgId: "fake-orgid",
+    orgDisplayName: "Fake Org",
+    orgSlug: "fake-org",
+    orgPaid: false,
     email: "foo@example.com",
   };
 
@@ -27,7 +32,7 @@ export const SignedIn = (): JSX.Element => {
 
   return (
     <ConsoleApiContext.Provider value={fakeConsoleApi}>
-      <AccountInfo me={me} />
+      <AccountInfo currentUser={me} />
     </ConsoleApiContext.Provider>
   );
 };
