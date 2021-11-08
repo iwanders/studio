@@ -163,10 +163,6 @@ export default class VelodynePlayer implements Player {
       this._end = receiveTime;
     }
 
-    this._totalBytesReceived += data.byteLength;
-    this._presence = PlayerPresence.PRESENT;
-    this._clearProblem(PROBLEM_SOCKET_ERROR, true);
-
     const rawPacket = new RawPacket(data);
 
     const frequency = RPM / 60.0;
