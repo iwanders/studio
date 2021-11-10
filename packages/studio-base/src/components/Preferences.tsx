@@ -159,6 +159,35 @@ function TimezoneSettings(): React.ReactElement {
   );
 }
 
+function TimestampFormat(): React.ReactElement {
+  const [timestampFormat, setTimestampFormat] = useAppConfigurationValue<string>(
+    AppSetting.TIMESTAMP_FORMAT,
+  );
+  const entries = [
+    { key: "unix", text: "Unix timestamp" },
+    { key: "local", text: "Local time" },
+  ];
+
+  return (
+    <VirtualizedComboBox
+      label="Timestamp format:"
+      options={entries}
+      autoComplete="on"
+      openOnKeyboardFocus
+      selectedKey={timestampFormat ?? "unix"}
+      onChange={(_event, option) => {
+        if (option) {
+          void setTimestampFormat(String(option.key));
+        }
+      }}
+      calloutProps={{
+        directionalHint: DirectionalHint.bottomLeftEdge,
+        directionalHintFixed: true,
+      }}
+    />
+  );
+}
+
 function MessageFramerate(): React.ReactElement {
   const [messageRate, setMessageRate] = useAppConfigurationValue<number>(AppSetting.MESSAGE_RATE);
   const entries = useMemo(
@@ -266,6 +295,9 @@ export default function Preferences(): React.ReactElement {
             </Stack.Item>
             <Stack.Item>
               <TimezoneSettings />
+            </Stack.Item>
+            <Stack.Item>
+              <TimestampFormat />
             </Stack.Item>
             <Stack.Item>
               <MessageFramerate />

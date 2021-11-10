@@ -14,10 +14,12 @@
 import { Stack } from "@fluentui/react";
 import { useCallback, useMemo, useRef } from "react";
 
+import { AppSetting } from "@foxglove/studio-base/AppSetting";
 import * as PanelAPI from "@foxglove/studio-base/PanelAPI";
 import Panel from "@foxglove/studio-base/components/Panel";
 import PanelToolbar from "@foxglove/studio-base/components/PanelToolbar";
 import TopicToRenderMenu from "@foxglove/studio-base/components/TopicToRenderMenu";
+import { useAppConfigurationValue } from "@foxglove/studio-base/index";
 import { MessageEvent } from "@foxglove/studio-base/players/types";
 
 import FilterBar, { FilterBarProps } from "./FilterBar";
@@ -44,6 +46,8 @@ const ROS2_LOG = "rcl_interfaces/msg/Log";
 const LogPanel = React.memo(({ config, saveConfig }: Props) => {
   const { topics } = PanelAPI.useDataSourceInfo();
   const { minLogLevel, searchTerms } = config;
+  const [timestampFormat] = useAppConfigurationValue<string>(AppSetting.TIMESTAMP_FORMAT);
+  const [timeZone] = useAppConfigurationValue<string>(AppSetting.TIMEZONE);
 
   const onFilterChange = useCallback<FilterBarProps["onFilterChange"]>(
     (filter) => {
@@ -104,7 +108,11 @@ const LogPanel = React.memo(({ config, saveConfig }: Props) => {
           items={filteredMessages}
           renderRow={({ item, style, key, ref }) => (
             <div ref={ref} key={key} style={style}>
-              <LogMessage msg={item.message} />
+              <LogMessage
+                msg={item.message}
+                timestampFormat={timestampFormat}
+                timeZone={timeZone}
+              />
             </div>
           )}
         />
