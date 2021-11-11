@@ -3,11 +3,13 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import { Stack, useTheme, Text, Link } from "@fluentui/react";
-import { useMemo, useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useUnmount } from "react-use";
 
 import { SidebarContent } from "@foxglove/studio-base/components/SidebarContent";
+import TextContent from "@foxglove/studio-base/components/TextContent";
 import { useSelectedPanels } from "@foxglove/studio-base/context/CurrentLayoutContext";
+import { usePanelCatalog } from "@foxglove/studio-base/context/PanelCatalogContext";
 import { getPanelTypeFromId } from "@foxglove/studio-base/util/layout";
 
 const resourceLinks = [
@@ -27,9 +29,8 @@ const legalLinks = [
   { text: "Privacy", url: "https://foxglove.dev/legal/privacy" },
 ];
 
-export default function HelpSidebar(): React.ReactElement {
+export default function HelpSidebar(): JSX.Element {
   const theme = useTheme();
-  const [helpContent, setHelpContent] = useState("");
   const { selectedPanelIds, setSelectedPanelIds } = useSelectedPanels();
   const selectedPanelId = useMemo(
     () => (selectedPanelIds.length === 1 ? selectedPanelIds[0] : undefined),
@@ -40,16 +41,11 @@ export default function HelpSidebar(): React.ReactElement {
     [selectedPanelId],
   );
 
-  useEffect(() => {
-    const getHelpContent = async () => {
-      const fetchedContent = await import(
-        `@foxglove/studio-base/panels/${panelType}/index.help.md`
-      );
-      console.log(fetchedContent);
-      setHelpContent(fetchedContent);
-    };
-    getHelpContent();
-  }, [panelType]);
+  const panelCatalog = usePanelCatalog();
+  const panelInfo = useMemo(
+    () => (panelType != undefined ? panelCatalog.getPanelByType(panelType) : undefined),
+    [panelCatalog, panelType],
+  );
 
   useUnmount(() => {
     // Automatically deselect the panel we were looking at help content for when the help sidebar closes
@@ -63,7 +59,12 @@ export default function HelpSidebar(): React.ReactElement {
       <Stack tokens={{ childrenGap: 30 }}>
         <Stack.Item>
           <Stack tokens={{ childrenGap: theme.spacing.s1 }}>
-            {helpContent}
+            {Boolean(panelInfo?.help) && (
+              <>
+                <TextContent allowMarkdownHtml={true}>{panelInfo?.help}</TextContent>
+                <hr />
+              </>
+            )}
             <h3>Resources</h3>
             <ul>
               {resourceLinks.map((link) => (

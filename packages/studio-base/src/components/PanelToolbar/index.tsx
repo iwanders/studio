@@ -362,6 +362,9 @@ export default React.memo<Props>(function PanelToolbar({
   const styles = useStyles();
   const { supportsStrictMode = true } = useContext(PanelContext) ?? {};
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const panelContext = useContext(PanelContext);
+  const { setSelectedPanelIds } = useSelectedPanels();
   const { openHelp } = useWorkspace();
 
   // Help-shown state must be hoisted outside the controls container so the modal can remain visible
@@ -384,8 +387,8 @@ export default React.memo<Props>(function PanelToolbar({
             tooltip="Help"
             fade
             onClick={() => {
-              const helpContentExists = Boolean(helpContent);
-              if (helpContentExists) {
+              if (panelContext?.id != undefined) {
+                setSelectedPanelIds([panelContext.id]);
                 openHelp();
               }
             }}
@@ -395,7 +398,15 @@ export default React.memo<Props>(function PanelToolbar({
         )}
       </>
     );
-  }, [additionalIcons, helpContent, openHelp, styles.icon, supportsStrictMode]);
+  }, [
+    additionalIcons,
+    helpContent,
+    openHelp,
+    setSelectedPanelIds,
+    panelContext?.id,
+    styles.icon,
+    supportsStrictMode,
+  ]);
 
   // Use a debounce and 0 refresh rate to avoid triggering a resize observation while handling
   // and existing resize observation.
