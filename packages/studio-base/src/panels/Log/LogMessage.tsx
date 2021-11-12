@@ -17,6 +17,7 @@ import { padStart } from "lodash";
 
 import { Time } from "@foxglove/rostime";
 import useLogStyles from "@foxglove/studio-base/panels/Log/useLogStyles";
+import { TimeDisplayMethod } from "@foxglove/studio-base/types/panels";
 import { formatTime } from "@foxglove/studio-base/util/formatTime";
 import { fonts } from "@foxglove/studio-base/util/sharedStyleConstants";
 
@@ -30,12 +31,12 @@ function PadStart(val: unknown, count: number) {
 
 function Stamp(props: {
   stamp: Time;
-  timestampFormat: string | undefined;
+  timestampFormat: TimeDisplayMethod;
   timeZone: string | undefined;
 }) {
   const stamp = props.stamp;
 
-  if (props.timestampFormat === "local") {
+  if (props.timestampFormat === "TOD") {
     const formattedTime = formatTime(props.stamp, props.timeZone);
     return <span>{formattedTime}</span>;
   } else {
@@ -63,7 +64,7 @@ export default React.memo(function LogMessage({
   timeZone,
 }: {
   msg: RosgraphMsgs$Log;
-  timestampFormat: string | undefined;
+  timestampFormat: TimeDisplayMethod;
   timeZone: string | undefined;
 }) {
   const altStr = `${msg.file}:${msg.line}`;

@@ -12,7 +12,7 @@ import { formatTime } from "@foxglove/studio-base/util/formatTime";
 import { formatTimeRaw } from "@foxglove/studio-base/util/time";
 
 export function useTimeFormat(): {
-  formatTime: (stamp: Time) => void;
+  formatTime: (stamp: Time) => string;
   timeFormat: TimeDisplayMethod;
   setTimeFormat: (format: TimeDisplayMethod) => Promise<void>;
 } {
