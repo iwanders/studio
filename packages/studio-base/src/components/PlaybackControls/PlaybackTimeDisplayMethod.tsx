@@ -22,7 +22,7 @@ import {
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 
 import { Time, isTimeInRangeInclusive } from "@foxglove/rostime";
-import { useTimeFormat } from "@foxglove/studio-base/hooks/useTimeFormat";
+import { useAppTimeFormat } from "@foxglove/studio-base/hooks";
 import {
   formatDate,
   formatTime,
@@ -49,7 +49,7 @@ const PlaybackTimeDisplayMethod = ({
   isPlaying: boolean;
 }): JSX.Element => {
   const timestampInputRef = useRef<HTMLInputElement>(ReactNull);
-  const timeFormat = useTimeFormat();
+  const timeFormat = useAppTimeFormat();
   const timeRawString = useMemo(
     () => (currentTime ? formatTimeRaw(currentTime) : undefined),
     [currentTime],

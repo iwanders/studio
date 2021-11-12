@@ -14,13 +14,11 @@
 import { Stack } from "@fluentui/react";
 import { useCallback, useMemo, useRef } from "react";
 
-import { AppSetting } from "@foxglove/studio-base/AppSetting";
 import * as PanelAPI from "@foxglove/studio-base/PanelAPI";
 import Panel from "@foxglove/studio-base/components/Panel";
 import PanelToolbar from "@foxglove/studio-base/components/PanelToolbar";
 import TopicToRenderMenu from "@foxglove/studio-base/components/TopicToRenderMenu";
-import { useTimeFormat } from "@foxglove/studio-base/hooks/useTimeFormat";
-import { useAppConfigurationValue } from "@foxglove/studio-base/index";
+import { useAppTimeFormat } from "@foxglove/studio-base/hooks";
 import { MessageEvent } from "@foxglove/studio-base/players/types";
 
 import FilterBar, { FilterBarProps } from "./FilterBar";
@@ -47,8 +45,7 @@ const ROS2_LOG = "rcl_interfaces/msg/Log";
 const LogPanel = React.memo(({ config, saveConfig }: Props) => {
   const { topics } = PanelAPI.useDataSourceInfo();
   const { minLogLevel, searchTerms } = config;
-  const { timeFormat } = useTimeFormat();
-  const [timeZone] = useAppConfigurationValue<string>(AppSetting.TIMEZONE);
+  const { timeFormat, timeZone } = useAppTimeFormat();
 
   const onFilterChange = useCallback<FilterBarProps["onFilterChange"]>(
     (filter) => {

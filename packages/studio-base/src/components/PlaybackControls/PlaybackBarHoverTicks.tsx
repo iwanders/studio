@@ -22,7 +22,7 @@ import {
 } from "@foxglove/studio-base/components/MessagePipeline";
 import HoverBar from "@foxglove/studio-base/components/TimeBasedChart/HoverBar";
 import { useHoverValue } from "@foxglove/studio-base/context/HoverValueContext";
-import { useTimeFormat } from "@foxglove/studio-base/hooks/useTimeFormat";
+import { useAppTimeFormat } from "@foxglove/studio-base/hooks";
 import { fonts } from "@foxglove/studio-base/util/sharedStyleConstants";
 
 const sharedTickStyles = css`
@@ -81,7 +81,7 @@ export default function PlaybackBarHoverTicks(props: Props): JSX.Element {
   const startTime = useMessagePipeline(getStartTime);
   const endTime = useMessagePipeline(getEndTime);
   const hoverValue = useHoverValue({ componentId, isTimestampScale: true });
-  const { formatTime } = useTimeFormat();
+  const { formatTime } = useAppTimeFormat();
 
   // Use a debounce and 0 refresh rate to avoid triggering a resize observation while handling
   // and existing resize observation.

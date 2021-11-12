@@ -6,15 +6,17 @@ import { useCallback, useMemo } from "react";
 
 import { Time } from "@foxglove/studio";
 import { AppSetting } from "@foxglove/studio-base/AppSetting";
-import { useAppConfigurationValue } from "@foxglove/studio-base/hooks";
 import { TimeDisplayMethod } from "@foxglove/studio-base/types/panels";
 import { formatTime } from "@foxglove/studio-base/util/formatTime";
 import { formatTimeRaw } from "@foxglove/studio-base/util/time";
 
-export function useTimeFormat(): {
+import { useAppConfigurationValue } from "./useAppConfigurationValue";
+
+export function useAppTimeFormat(): {
   formatTime: (stamp: Time) => string;
   timeFormat: TimeDisplayMethod;
   setTimeFormat: (format: TimeDisplayMethod) => Promise<void>;
+  timeZone: string | undefined;
 } {
   const [timeFormat, setTimeFormat] = useAppConfigurationValue<string>(AppSetting.TIME_FORMAT);
   const [timeZone] = useAppConfigurationValue<string>(AppSetting.TIMEZONE);
@@ -39,5 +41,6 @@ export function useTimeFormat(): {
     formatTime: formatTimeCallback,
     setTimeFormat,
     timeFormat: effectiveFormat,
+    timeZone,
   };
 }

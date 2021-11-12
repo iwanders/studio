@@ -23,8 +23,8 @@ import { AppSetting } from "@foxglove/studio-base/AppSetting";
 import OsContextSingleton from "@foxglove/studio-base/OsContextSingleton";
 import { ExperimentalFeatureSettings } from "@foxglove/studio-base/components/ExperimentalFeatureSettings";
 import { SidebarContent } from "@foxglove/studio-base/components/SidebarContent";
+import { useAppTimeFormat } from "@foxglove/studio-base/hooks";
 import { useAppConfigurationValue } from "@foxglove/studio-base/hooks/useAppConfigurationValue";
-import { useTimeFormat } from "@foxglove/studio-base/hooks/useTimeFormat";
 import { TimeDisplayMethod } from "@foxglove/studio-base/types/panels";
 import fuzzyFilter from "@foxglove/studio-base/util/fuzzyFilter";
 
@@ -162,7 +162,7 @@ function TimezoneSettings(): React.ReactElement {
 }
 
 function TimeFormat(): React.ReactElement {
-  const { timeFormat, setTimeFormat } = useTimeFormat();
+  const { timeFormat, setTimeFormat } = useAppTimeFormat();
   const entries: Array<{ key: TimeDisplayMethod; text: string }> = [
     { key: "SEC", text: "Seconds" },
     { key: "TOD", text: "Local" },

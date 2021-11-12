@@ -18,7 +18,7 @@ import {
   useClearHoverValue,
   useSetHoverValue,
 } from "@foxglove/studio-base/context/HoverValueContext";
-import { useTimeFormat } from "@foxglove/studio-base/hooks/useTimeFormat";
+import { useAppTimeFormat } from "@foxglove/studio-base/hooks";
 import { fonts } from "@foxglove/studio-base/util/sharedStyleConstants";
 
 import PlaybackBarHoverTicks from "./PlaybackBarHoverTicks";
@@ -103,7 +103,7 @@ export default function Scrubber(props: Props): JSX.Element {
   const [hoverComponentId] = useState<string>(() => uuidv4());
   const el = useRef<HTMLDivElement>(ReactNull);
 
-  const { formatTime, timeFormat } = useTimeFormat();
+  const { formatTime, timeFormat } = useAppTimeFormat();
 
   const startTime = useMessagePipeline(selectStartTime);
   const currentTime = useMessagePipeline(selectCurrentTime);
