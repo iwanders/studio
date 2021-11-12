@@ -46,7 +46,7 @@ const ROS2_LOG = "rcl_interfaces/msg/Log";
 const LogPanel = React.memo(({ config, saveConfig }: Props) => {
   const { topics } = PanelAPI.useDataSourceInfo();
   const { minLogLevel, searchTerms } = config;
-  const [timestampFormat] = useAppConfigurationValue<string>(AppSetting.TIMESTAMP_FORMAT);
+  const [timeFormat] = useAppConfigurationValue<string>(AppSetting.TIME_FORMAT);
   const [timeZone] = useAppConfigurationValue<string>(AppSetting.TIMEZONE);
 
   const onFilterChange = useCallback<FilterBarProps["onFilterChange"]>(
@@ -108,11 +108,7 @@ const LogPanel = React.memo(({ config, saveConfig }: Props) => {
           items={filteredMessages}
           renderRow={({ item, style, key, ref }) => (
             <div ref={ref} key={key} style={style}>
-              <LogMessage
-                msg={item.message}
-                timestampFormat={timestampFormat}
-                timeZone={timeZone}
-              />
+              <LogMessage msg={item.message} timestampFormat={timeFormat} timeZone={timeZone} />
             </div>
           )}
         />

@@ -24,6 +24,8 @@ import OsContextSingleton from "@foxglove/studio-base/OsContextSingleton";
 import { ExperimentalFeatureSettings } from "@foxglove/studio-base/components/ExperimentalFeatureSettings";
 import { SidebarContent } from "@foxglove/studio-base/components/SidebarContent";
 import { useAppConfigurationValue } from "@foxglove/studio-base/hooks/useAppConfigurationValue";
+import { useTimeFormat } from "@foxglove/studio-base/hooks/useTimeFormat";
+import { TimeDisplayMethod } from "@foxglove/studio-base/types/panels";
 import fuzzyFilter from "@foxglove/studio-base/util/fuzzyFilter";
 
 const MESSAGE_RATES = [1, 3, 5, 10, 15, 20, 30, 60];
@@ -159,13 +161,11 @@ function TimezoneSettings(): React.ReactElement {
   );
 }
 
-function TimestampFormat(): React.ReactElement {
-  const [timestampFormat, setTimestampFormat] = useAppConfigurationValue<string>(
-    AppSetting.TIMESTAMP_FORMAT,
-  );
-  const entries = [
-    { key: "unix", text: "Unix timestamp" },
-    { key: "local", text: "Local time" },
+function TimeFormat(): React.ReactElement {
+  const { timeFormat, setTimeFormat } = useTimeFormat();
+  const entries: Array<{ key: TimeDisplayMethod; text: string }> = [
+    { key: "SEC", text: "Seconds" },
+    { key: "TOD", text: "Local" },
   ];
 
   return (
@@ -174,10 +174,10 @@ function TimestampFormat(): React.ReactElement {
       options={entries}
       autoComplete="on"
       openOnKeyboardFocus
-      selectedKey={timestampFormat ?? "unix"}
+      selectedKey={timeFormat}
       onChange={(_event, option) => {
         if (option) {
-          void setTimestampFormat(String(option.key));
+          void setTimeFormat(String(option.key) as TimeDisplayMethod);
         }
       }}
       calloutProps={{
@@ -297,7 +297,7 @@ export default function Preferences(): React.ReactElement {
               <TimezoneSettings />
             </Stack.Item>
             <Stack.Item>
-              <TimestampFormat />
+              <TimeFormat />
             </Stack.Item>
             <Stack.Item>
               <MessageFramerate />
