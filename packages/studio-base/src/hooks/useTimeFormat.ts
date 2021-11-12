@@ -2,7 +2,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 import { Time } from "@foxglove/studio";
 import { AppSetting } from "@foxglove/studio-base/AppSetting";
@@ -17,22 +17,27 @@ export function useTimeFormat(): {
   setTimeFormat: (format: TimeDisplayMethod) => Promise<void>;
 } {
   const [timeFormat, setTimeFormat] = useAppConfigurationValue<string>(AppSetting.TIME_FORMAT);
+  const [timeZone] = useAppConfigurationValue<string>(AppSetting.TIMEZONE);
+
+  const effectiveFormat: TimeDisplayMethod = useMemo(
+    () => (timeFormat === "SEC" ? "SEC" : "TOD"),
+    [timeFormat],
+  );
 
   const formatTimeCallback = useCallback(
     (stamp: Time) => {
-      switch (timeFormat) {
-        case "TOD":
-          return formatTime(stamp);
-        default:
-          return formatTimeRaw(stamp);
+      if (effectiveFormat === "TOD") {
+        return formatTime(stamp, timeZone);
+      } else {
+        return formatTimeRaw(stamp);
       }
     },
-    [timeFormat],
+    [effectiveFormat, timeZone],
   );
 
   return {
     formatTime: formatTimeCallback,
     setTimeFormat,
-    timeFormat: timeFormat === "SEC" ? "SEC" : "TOD",
+    timeFormat: effectiveFormat,
   };
 }
