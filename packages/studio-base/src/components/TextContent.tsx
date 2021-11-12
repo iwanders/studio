@@ -105,7 +105,7 @@ const useStyles = makeStyles((theme) => ({
       flex: "none",
       fontFamily: fonts.MONOSPACE,
       color: theme.semanticColors.bodySubtext,
-      backgroundColor: theme.semanticColors.bodyStandoutBackground,
+      backgroundColor: theme.semanticColors.bodyBackground,
       boxShadow: `inset 0 1px 0 ${theme.semanticColors.bodyBackgroundHovered}`,
       borderRadius: theme.effects.roundedCorner2,
       fontSize: theme.fonts.small.fontSize,
