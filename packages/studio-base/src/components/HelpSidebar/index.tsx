@@ -11,7 +11,7 @@ import Icon from "@foxglove/studio-base/components/Icon";
 import { SidebarContent } from "@foxglove/studio-base/components/SidebarContent";
 import TextContent from "@foxglove/studio-base/components/TextContent";
 import { useSelectedPanels } from "@foxglove/studio-base/context/CurrentLayoutContext";
-import { usePanelCatalog } from "@foxglove/studio-base/context/PanelCatalogContext";
+import { PanelInfo, usePanelCatalog } from "@foxglove/studio-base/context/PanelCatalogContext";
 
 const resourceLinks = [
   { text: "Download app", url: "https://foxglove.dev/download" },
@@ -63,7 +63,10 @@ export default function HelpSidebar(): JSX.Element {
     () => (panelType != undefined ? panelCatalog.getPanelByType(panelType) : undefined),
     [panelCatalog, panelType],
   );
+  const sortByTitle = (a: PanelInfo, b: PanelInfo) =>
+    a.title.localeCompare(b.title, undefined, { ignorePunctuation: true, sensitivity: "base" });
   const panels = panelCatalog.getPanels();
+  const sortedPanels = [...panels].sort(sortByTitle);
 
   useEffect(() => setIsHomeView(!panelInfo), [setIsHomeView, panelInfo]);
 
@@ -109,7 +112,7 @@ export default function HelpSidebar(): JSX.Element {
             <Stack.Item>
               <Text styles={styles.subheader}>Panels</Text>
               <Stack tokens={{ padding: `${theme.spacing.m} 0`, childrenGap: theme.spacing.s1 }}>
-                {panels.map(({ title, type }) => (
+                {sortedPanels.map(({ title, type }) => (
                   <Link key={title} onClick={() => setPanelDocToDisplay(type)}>
                     {title}
                   </Link>
