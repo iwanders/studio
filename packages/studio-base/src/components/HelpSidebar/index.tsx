@@ -10,38 +10,12 @@ import { SidebarContent } from "@foxglove/studio-base/components/SidebarContent"
 import TextContent from "@foxglove/studio-base/components/TextContent";
 import { useSelectedPanels } from "@foxglove/studio-base/context/CurrentLayoutContext";
 import { usePanelCatalog } from "@foxglove/studio-base/context/PanelCatalogContext";
-import { getPanelTypeFromId } from "@foxglove/studio-base/util/layout";
 
 const resourceLinks = [
   { text: "Download app", url: "https://foxglove.dev/download" },
   { text: "Read docs", url: "https://foxglove.dev/docs" },
   { text: "Join our community", url: "https://foxglove.dev/community" },
   { text: "Browse paid plans", url: "https://foxglove.dev/pricing" },
-];
-
-const panelLinks = [
-  { text: "3D", url: "" },
-  { text: "Diagnostics – Detail", url: "" },
-  { text: "Diagnostics – Summary", url: "" },
-  { text: "Image", url: "" },
-  { text: "Teleop", url: "" },
-  { text: "Map", url: "" },
-  { text: "Parameters", url: "" },
-  { text: "Plot", url: "" },
-  { text: "Publish", url: "" },
-  { text: "Raw Messages", url: "" },
-  { text: "Log", url: "" },
-  { text: "State Transitions", url: "" },
-  { text: "Table", url: "" },
-  { text: "URDF Viewer", url: "" },
-  { text: "Topic Graph", url: "" },
-  { text: "Data Source", url: "" },
-  { text: "Variable Slider", url: "" },
-  { text: "Node Playground", url: "" },
-  { text: "Tab", url: "" },
-  { text: "Studio - Playback Performance", url: "" },
-  { text: "Studio - Internals", url: "" },
-  { text: "Studio - Logs", url: "" },
 ];
 
 const productLinks = [
@@ -57,34 +31,21 @@ const legalLinks = [
 export default function HelpSidebar(): JSX.Element {
   const theme = useTheme();
   const [isHomeView, setIsHomeView] = useState(true);
-  const { selectedPanelIds, setSelectedPanelIds } = useSelectedPanels();
-  const selectedPanelId = useMemo(
-    () => (selectedPanelIds.length === 1 ? selectedPanelIds[0] : undefined),
-    [selectedPanelIds],
-  );
-  const panelType = useMemo(
-    () => (selectedPanelId != undefined ? getPanelTypeFromId(selectedPanelId) : undefined),
-    [selectedPanelId],
-  );
+  const { panelDocToDisplay: panelType, setPanelDocToDisplay } = useSelectedPanels();
 
   const panelCatalog = usePanelCatalog();
   const panelInfo = useMemo(
     () => (panelType != undefined ? panelCatalog.getPanelByType(panelType) : undefined),
     [panelCatalog, panelType],
   );
+  const panels = panelCatalog.getPanels();
 
-  useEffect(() => {
-    if (panelInfo) {
-      setIsHomeView(false);
-    } else {
-      setIsHomeView(true);
-    }
-  }, [panelInfo]);
+  useEffect(() => setIsHomeView(!panelInfo), [setIsHomeView, panelInfo]);
 
   useUnmount(() => {
     // Automatically deselect the panel we were looking at help content for when the help sidebar closes
-    if (selectedPanelId != undefined) {
-      setSelectedPanelIds([]);
+    if (panelType != undefined) {
+      setPanelDocToDisplay("");
     }
   });
 
@@ -120,9 +81,9 @@ export default function HelpSidebar(): JSX.Element {
 
                 <h3>Panels</h3>
                 <ul>
-                  {panelLinks.map((link) => (
-                    <li key={link.text}>
-                      <Link href={link.url}>{link.text}</Link>
+                  {panels.map(({ title, type }) => (
+                    <li key={title}>
+                      <Link onClick={() => setPanelDocToDisplay(type)}>{title}</Link>
                     </li>
                   ))}
                 </ul>

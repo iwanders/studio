@@ -364,7 +364,7 @@ export default React.memo<Props>(function PanelToolbar({
   const [menuOpen, setMenuOpen] = useState(false);
 
   const panelContext = useContext(PanelContext);
-  const { setSelectedPanelIds } = useSelectedPanels();
+  const { setPanelDocToDisplay } = useSelectedPanels();
   const { openHelp } = useWorkspace();
 
   // Help-shown state must be hoisted outside the controls container so the modal can remain visible
@@ -387,8 +387,8 @@ export default React.memo<Props>(function PanelToolbar({
             tooltip="Help"
             fade
             onClick={() => {
-              if (panelContext?.id != undefined) {
-                setSelectedPanelIds([panelContext.id]);
+              if (panelContext?.type != undefined) {
+                setPanelDocToDisplay(panelContext.type);
                 openHelp();
               }
             }}
@@ -402,8 +402,8 @@ export default React.memo<Props>(function PanelToolbar({
     additionalIcons,
     helpContent,
     openHelp,
-    setSelectedPanelIds,
-    panelContext?.id,
+    setPanelDocToDisplay,
+    panelContext?.type,
     styles.icon,
     supportsStrictMode,
   ]);
