@@ -69,7 +69,7 @@ export default function SidebarButton(props: SidebarButtonProps): JSX.Element {
               fontSize: ICON_SIZE,
               height: ICON_SIZE,
               lineHeight: ICON_SIZE,
-              "& span": { verticalAlign: "baseline" },
+              svg: { fill: "currentColor" },
             },
           },
           ...iconProps,
