@@ -33,6 +33,6 @@ export function useTimeFormat(): {
   return {
     formatTime: formatTimeCallback,
     setTimeFormat,
-    timeFormat: timeFormat === "TOD" ? "TOD" : "SEC",
+    timeFormat: timeFormat === "SEC" ? "SEC" : "TOD",
   };
 }
