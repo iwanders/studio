@@ -97,7 +97,7 @@ const mainConfig = (env: unknown, argv: WebpackArgv): Configuration => {
     devtool: isDev ? "eval-cheap-module-source-map" : "source-map",
 
     output: {
-      publicPath: "/",
+      publicPath: "auto",
 
       // Output filenames should include content hashes in order to cache bust when new versions are available
       filename: isDev ? "[name].js" : "[name].[contenthash].js",
