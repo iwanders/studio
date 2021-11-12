@@ -2,7 +2,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import { Stack, useTheme, Text, Link } from "@fluentui/react";
+import { Stack, useTheme, Text, Link, ITheme, ITextStyles, ILinkStyles } from "@fluentui/react";
 import { useMemo, useState, useEffect } from "react";
 import { useUnmount } from "react-use";
 
@@ -54,8 +54,31 @@ const legalLinks = [
   { text: "Privacy", url: "https://foxglove.dev/legal/privacy" },
 ];
 
+const useComponentStyles = (theme: ITheme) =>
+  useMemo(
+    () => ({
+      subheader: {
+        root: {
+          ...theme.fonts.xSmall,
+          display: "block",
+          textTransform: "uppercase",
+          color: theme.palette.neutralSecondaryAlt,
+          letterSpacing: "0.025em",
+        },
+      } as Partial<ITextStyles>,
+      link: {
+        root: {
+          ...theme.fonts.smallPlus,
+          fontSize: 13,
+        } as Partial<ILinkStyles>,
+      },
+    }),
+    [theme],
+  );
+
 export default function HelpSidebar(): JSX.Element {
   const theme = useTheme();
+  const styles = useComponentStyles(theme);
   const [isHomeView, setIsHomeView] = useState(true);
   const { selectedPanelIds, setSelectedPanelIds } = useSelectedPanels();
   const selectedPanelId = useMemo(
@@ -90,67 +113,68 @@ export default function HelpSidebar(): JSX.Element {
 
   return (
     <SidebarContent title="Help">
-      <Stack tokens={{ childrenGap: 30 }}>
-        <Stack.Item>
-          <Stack tokens={{ childrenGap: theme.spacing.s1 }}>
-            {!isHomeView && (
-              <>
-                <Stack.Item>
-                  <Stack tokens={{ childrenGap: theme.spacing.s1 }}>
-                    <button onClick={() => setIsHomeView(true)}>Go home</button>
-                  </Stack>
-                </Stack.Item>
-                {panelInfo?.help != undefined ? (
-                  <TextContent allowMarkdownHtml={true}>{panelInfo?.help}</TextContent>
-                ) : (
-                  "Panel does not have any documentation details."
-                )}
-              </>
-            )}
-            {isHomeView && (
-              <>
-                <h3>Resources</h3>
-                <ul>
-                  {resourceLinks.map((link) => (
-                    <li key={link.text}>
-                      <Link href={link.url}>{link.text}</Link>
-                    </li>
-                  ))}
-                </ul>
-
-                <h3>Panels</h3>
-                <ul>
-                  {panelLinks.map((link) => (
-                    <li key={link.text}>
-                      <Link href={link.url}>{link.text}</Link>
-                    </li>
-                  ))}
-                </ul>
-
-                <h3>Products</h3>
-                <ul>
-                  {productLinks.map((link) => (
-                    <li key={link.text}>
-                      <Link href={link.url}>{link.text}</Link>
-                    </li>
-                  ))}
-                </ul>
-
-                <h3>Legal</h3>
-                <ul>
-                  {legalLinks.map((link) => (
-                    <li key={link.text}>
-                      <Link href={link.url}>{link.text}</Link>
-                    </li>
-                  ))}
-                </ul>
-                <Text>
-                  Learn more at <Link href="https://foxglove.dev">foxglove.dev</Link>.
-                </Text>
-              </>
+      <Stack>
+        {!isHomeView && (
+          <Stack tokens={{ childrenGap: theme.spacing.s2 }}>
+            <button onClick={() => setIsHomeView(true)}>Go home</button>
+            {panelInfo?.help != undefined ? (
+              <TextContent allowMarkdownHtml={true}>{panelInfo?.help}</TextContent>
+            ) : (
+              "Panel does not have any documentation details."
             )}
           </Stack>
-        </Stack.Item>
+        )}
+        {isHomeView && (
+          <Stack tokens={{ childrenGap: theme.spacing.m }}>
+            <Stack.Item>
+              <Text styles={styles.subheader}>External Resources</Text>
+              <Stack tokens={{ padding: `${theme.spacing.m} 0`, childrenGap: theme.spacing.s1 }}>
+                {resourceLinks.map((link) => (
+                  <Link key={link.text} href={link.url} styles={styles.link}>
+                    {link.text}
+                  </Link>
+                ))}
+              </Stack>
+            </Stack.Item>
+
+            <Stack.Item>
+              <Text styles={styles.subheader}>Panels</Text>
+              <Stack tokens={{ padding: `${theme.spacing.m} 0`, childrenGap: theme.spacing.s1 }}>
+                {panelLinks.map((link) => (
+                  <Link key={link.text} href={link.url} styles={styles.link}>
+                    {link.text}
+                  </Link>
+                ))}
+              </Stack>
+            </Stack.Item>
+
+            <Stack.Item>
+              <Text styles={styles.subheader}>Products</Text>
+              <Stack tokens={{ padding: `${theme.spacing.m} 0`, childrenGap: theme.spacing.s1 }}>
+                {productLinks.map((link) => (
+                  <Link key={link.text} href={link.url} styles={styles.link}>
+                    {link.text}
+                  </Link>
+                ))}
+              </Stack>
+            </Stack.Item>
+
+            <Stack.Item>
+              <Text styles={styles.subheader}>Legal</Text>
+              <Stack tokens={{ padding: `${theme.spacing.m} 0`, childrenGap: theme.spacing.s1 }}>
+                {legalLinks.map((link) => (
+                  <Link key={link.text} href={link.url} styles={styles.link}>
+                    {link.text}
+                  </Link>
+                ))}
+              </Stack>
+            </Stack.Item>
+
+            <Text>
+              Learn more at <Link href="https://foxglove.dev">foxglove.dev</Link>.
+            </Text>
+          </Stack>
+        )}
       </Stack>
     </SidebarContent>
   );

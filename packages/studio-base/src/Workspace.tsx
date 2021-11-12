@@ -443,7 +443,7 @@ export default function Workspace(props: WorkspaceProps): JSX.Element {
       ["variables", { iconName: "Variable2", title: "Variables", component: Variables }],
       ["preferences", { iconName: "Settings", title: "Preferences", component: Preferences }],
       ["extensions", { iconName: "AddIn", title: "Extensions", component: ExtensionsSidebar }],
-      ["help", { iconName: "HelpCircle", title: "Help", component: HelpSidebar }],
+      ["help", { iconName: "QuestionCircle", title: "Help", component: HelpSidebar }],
     ]);
 
     return supportsAccountSettings
